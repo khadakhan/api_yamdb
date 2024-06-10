@@ -1,13 +1,16 @@
+import random
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
-from rest_framework import filters, generics, mixins, viewsets
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework_simplejwt.views import TokenObtainPairView
+from django.core.mail import send_mail
+from rest_framework import filters, mixins, viewsets, status
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.response import Response
+from rest_framework.decorators import action
 from reviews.models import Category, Genre, Review
-
 from .serializers import (
     CategorySerializer, GenreSerializer, CommentSerializer,
-    MyTokenObtainPairSerializer, UserSerializer, ReviewSerializer)
+    MyTokenObtainPairSerializer, UserSerializer,
+    ReviewSerializer, TokenConfirmationSerializer)
 
 User = get_user_model()
 
@@ -15,17 +18,84 @@ User = get_user_model()
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    permissions = {
+        'default': [IsAdminUser],
+        'create': [AllowAny],
+        'signup': [AllowAny],
+        'token': [AllowAny],
+        'me': [IsAuthenticated],
+    }
 
+    def get_permissions(self):
+        try:
+            return [
+                permission() for permission in self.permissions[self.action]]
+        except KeyError:
+            return [permission() for permission in self.permissions['default']]
 
-class SignUpView(generics.CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [AllowAny]
+    @action(detail=False,
+            methods=['post'],
+            permission_classes=[AllowAny])
+    def signup(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        confirmation_code = f'{random.randint(100000, 999999):06}'
+        user.confirmation_code = confirmation_code
+        user.save()
+        send_mail(
+            'Код подтверждения',
+            f'Ваш код подтверждения - {confirmation_code}',
+            'from@example.com',
+            [user.email],
+            fail_silently=False,
+        )
+        return Response(
+            data={'username': user.username, 'email': user.email},
+            status=status.HTTP_200_OK)
 
+    @action(detail=False,
+            methods=['post'],
+            permission_classes=[AllowAny])
+    def token(self, request):
+        serializer = TokenConfirmationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        username = serializer.validated_data['username']
+        confirmation_code = serializer.validated_data['confirmation_code']
 
-class MyTokenObtainPairView(TokenObtainPairView):
-    serializer_class = MyTokenObtainPairSerializer
+        try:
+            user = User.objects.get(
+                username=username,
+                confirmation_code=confirmation_code)
+        except User.DoesNotExist:
+            return Response(
+                data={'detail': 'Неверно веден username или код'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        user.confirmation_code = None
+        user.save()
+
+        token_serializer = MyTokenObtainPairSerializer(
+            data={'username': username, 'password': user.password})
+        token_serializer.is_valid(raise_exception=True)
+
+        return Response(
+            token_serializer.validated_data,
+            status=status.HTTP_200_OK)
+
+    @action(detail=False,
+            methods=['get', 'patch'],
+            permission_classes=[IsAuthenticated])
+    def me(self, request):
+        if request.method == 'GET':
+            serializer = self.get_serializer(request.user)
+            return Response(serializer.data)
+        elif request.method == 'PATCH':
+            serializer = self.get_serializer(
+                request.user, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
