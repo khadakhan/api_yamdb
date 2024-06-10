@@ -1,7 +1,10 @@
 from rest_framework import filters, viewsets, mixins
 
-from api.serializers import CategorySerializer, GenreSerializer
-from reviews.models import Category, Genre
+from api.serializers import (
+    CategorySerializer,
+    GenreSerializer,
+    TitleSerializer)
+from reviews.models import Category, Genre, Title
 
 
 class BaseCreateListDestroyViewSet(
@@ -32,3 +35,15 @@ class GenreViewSet(BaseCreateListDestroyViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    """ViewSet for title."""
+
+    queryset = Title.objects.prefetch_related(
+        'genre').select_related('category')
+    # TODO add permission class
+    http_method_names = ['get', 'post', 'patch', 'delete'] 
+    serializer_class = TitleSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ('category', 'genre', 'name', 'year')
