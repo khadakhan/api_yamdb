@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from reviews.models import Category, Genre
 
 User = get_user_model()
 
@@ -24,3 +25,19 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token = super().get_token(user)
         token['email'] = user.email
         return token
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    """Serializer for category viewset."""
+
+    class Meta:
+        fields = ('name', 'slug')
+        model = Category
+
+
+class GenreSerializer(serializers.ModelSerializer):
+    """Serializer for genre viewset."""
+
+    class Meta:
+        fields = ('name', 'slug')
+        model = Genre
