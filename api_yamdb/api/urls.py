@@ -1,9 +1,12 @@
 from django.urls import include, path
 from rest_framework.routers import SimpleRouter
 
+from api.views import CategoryViewSet
+
 app_name = 'api'
 
 router = SimpleRouter()
+router.register('categories', CategoryViewSet) 
 # ...
 
 url_v1 = [
