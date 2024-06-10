@@ -1,7 +1,30 @@
-from rest_framework import filters, viewsets, mixins
 
-from api.serializers import CategorySerializer, GenreSerializer
+from rest_framework import generics, viewsets, filters, mixins
+from django.contrib.auth import get_user_model
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework_simplejwt.views import TokenObtainPairView
 from reviews.models import Category, Genre
+
+from .serializers import UserSerializer, MyTokenObtainPairSerializer, CategorySerializer, GenreSerializer
+
+User = get_user_model()
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class SignUpView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [AllowAny]
+
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
+
 
 
 class BaseCreateListDestroyViewSet(
@@ -32,3 +55,4 @@ class GenreViewSet(BaseCreateListDestroyViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
+
