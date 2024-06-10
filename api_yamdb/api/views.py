@@ -3,7 +3,8 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from rest_framework import filters, mixins, viewsets, status
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.permissions import (
+    AllowAny, IsAuthenticated, IsAdminUser)
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from reviews.models import Category, Genre, Review
@@ -28,10 +29,15 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         try:
-            return [
-                permission() for permission in self.permissions[self.action]]
+            return (
+                permission() for permission in
+                self.permissions[self.action]
+            )
         except KeyError:
-            return [permission() for permission in self.permissions['default']]
+            return (
+                permission() for permission in
+                self.permissions['default']
+            )
 
     @action(detail=False,
             methods=['post'],
@@ -48,8 +54,7 @@ class UserViewSet(viewsets.ModelViewSet):
             f'Ваш код подтверждения - {confirmation_code}',
             'from@example.com',
             [user.email],
-            fail_silently=False,
-        )
+            fail_silently=False)
         return Response(
             data={'username': user.username, 'email': user.email},
             status=status.HTTP_200_OK)
@@ -62,7 +67,6 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         username = serializer.validated_data['username']
         confirmation_code = serializer.validated_data['confirmation_code']
-
         try:
             user = User.objects.get(
                 username=username,
@@ -71,14 +75,11 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(
                 data={'detail': 'Неверно веден username или код'},
                 status=status.HTTP_400_BAD_REQUEST)
-
         user.confirmation_code = None
         user.save()
-
         token_serializer = MyTokenObtainPairSerializer(
             data={'username': username, 'password': user.password})
         token_serializer.is_valid(raise_exception=True)
-
         return Response(
             token_serializer.validated_data,
             status=status.HTTP_200_OK)
