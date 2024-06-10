@@ -20,6 +20,10 @@ class Review(models.Model):
         auto_now_add=True
     )
 
+    class Meta:
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
+
 
 class Comment(models.Model):
     rewiew = models.ForeignKey(
@@ -34,3 +38,7 @@ class Comment(models.Model):
         'Дата публикации комментария',
         auto_now_add=True
     )
+
+    class Meta:
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
