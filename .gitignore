@@ -5,7 +5,8 @@ __pycache__/
 
 # C extensions
 *.so
-
+api_yamdb/api/migrations
+api_yamdb/reviews/migrations/0001_initial.py
 # Distribution / packaging
 .Python
 build/
