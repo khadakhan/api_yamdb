@@ -5,14 +5,14 @@ from api.views import CategoryViewSet, GenreViewSet
 
 app_name = 'api'
 
-router = SimpleRouter()
-router.register('categories', CategoryViewSet)
-router.register('genres', GenreViewSet)
+v1_router = SimpleRouter()
+v1_router.register('categories', CategoryViewSet)
+v1_router.register('genres', GenreViewSet)
 # ...
 
 url_v1 = [
     # path('auth', ...)
-    path('', include(router.urls)),
+    path('', include(v1_router.urls)),
 ]
 
 urlpatterns = [
