@@ -9,14 +9,9 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('username', 'email', 'password')
-
-    def create(self, validated_data):
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data['email']
-        )
-        return user
+        fields = ('username', 'email', 'first_name',
+                  'last_name', 'bio', 'role')
+        extra_kwargs = {'password': {'write_only': True}}
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -26,7 +21,12 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['email'] = user.email
         return token
 
-      
+
+class TokenConfirmationSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    confirmation_code = serializers.CharField()
+
+
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         slug_field='username',
@@ -48,8 +48,8 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = '__all__'
         model = Comment
         read_only_fields = ('rewiew',)
-        
-        
+
+
 class CategorySerializer(serializers.ModelSerializer):
     """Serializer for category viewset."""
 
