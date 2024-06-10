@@ -1,11 +1,12 @@
-
-from rest_framework import generics, viewsets, filters, mixins
 from django.contrib.auth import get_user_model
+from rest_framework import filters, generics, mixins, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 from reviews.models import Category, Genre
 
-from .serializers import UserSerializer, MyTokenObtainPairSerializer, CategorySerializer, GenreSerializer
+from .serializers import (
+    CategorySerializer, GenreSerializer,
+    MyTokenObtainPairSerializer, UserSerializer)
 
 User = get_user_model()
 

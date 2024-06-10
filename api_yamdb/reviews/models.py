@@ -26,7 +26,7 @@ class Category(models.Model):
         verbose_name_plural = 'Категории'
 
     def __str__(self):
-        return self.title
+        return self.name  # TODO: fix this title
 
 
 class Genre(models.Model):
@@ -42,5 +42,4 @@ class Genre(models.Model):
         verbose_name_plural = 'Жанры'
 
     def __str__(self):
-        return self.title
-
+        return self.name  # TODO: fix this title
