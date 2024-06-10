@@ -6,7 +6,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from reviews.models import Category, Genre, Review
 
 from .serializers import (
-    CategorySerializer, GenreSerializer, CommentSerializer
+    CategorySerializer, GenreSerializer, CommentSerializer,
     MyTokenObtainPairSerializer, UserSerializer, ReviewSerializer)
 
 User = get_user_model()
@@ -47,17 +47,16 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
-        
-        
+
+
 class BaseCreateListDestroyViewSet(
-        mixins.CreateModelMixin,
-        mixins.ListModelMixin,
-        mixins.DestroyModelMixin,
-        viewsets.GenericViewSet):
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet):
     """Base class to provide create, list, destroy acts."""
 
 
-    
 class CategoryViewSet(BaseCreateListDestroyViewSet):
     """ViewSet for category."""
 
@@ -78,5 +77,3 @@ class GenreViewSet(BaseCreateListDestroyViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
-
-
