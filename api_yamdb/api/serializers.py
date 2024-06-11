@@ -4,7 +4,8 @@ from datetime import datetime
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
-from django.db.models import Avg
+from django.db.models import Avg, IntegerField
+from django.db.models.functions import Cast
 from rest_framework import serializers
 from reviews.models import Category, Comment, Genre, Review, Title, SCORES
 from rest_framework.serializers import ModelSerializer, ValidationError
@@ -144,11 +145,19 @@ class TitleSerializer(serializers.ModelSerializer):
     category = CategoryAnotherSerializer()
 
     class Meta:
-        fields = ('id', 'name', 'year', 'description', 'genre', 'category')
+        fields = (
+            'id',
+            'name',
+            'year',
+            'rating',
+            'description',
+            'genre',
+            'category')
         model = Title
 
     def get_rating(self, title):
-        return int(title.reviews.annotate(Avg('score'), default=None))
+        return title.reviews.all().aggregate(
+            rating=Cast(Avg('score'), output_field=IntegerField()))['rating']
 
     def validate_year(self, creation_year):
         if creation_year > datetime.now().year:

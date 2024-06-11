@@ -109,7 +109,7 @@ class Review(models.Model):
         # При удалении объекта произведения Title должны удаляться все
         # отзывы к этому произведению и комментарии к ним.
         on_delete=models.CASCADE,
-        related_name='rewiews'
+        related_name='reviews'
     )
     text = models.TextField()
     author = models.ForeignKey(
@@ -132,7 +132,7 @@ class Review(models.Model):
 
 class Comment(models.Model):
     """Comment model."""
-    rewiew_id = models.ForeignKey(
+    review_id = models.ForeignKey(
         Review,
         # При удалении объекта отзыва Review должны быть удалены
         # все комментарии к этому отзыву.
