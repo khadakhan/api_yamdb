@@ -6,7 +6,7 @@ from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.validators import UniqueTogetherValidator
-from reviews.models import Category, Comment, Genre, Review
+from reviews.models import Category, Comment, Genre, Review, SCORES
 
 User = get_user_model()
 
@@ -56,6 +56,7 @@ class ReviewSerializer(ModelSerializer):
         slug_field='username',
         read_only=True
     )
+    score = serializers.ChoiceField(choices=SCORES)
 
     class Meta:
         fields = ('text',
