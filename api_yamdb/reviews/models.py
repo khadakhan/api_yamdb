@@ -41,8 +41,8 @@ class User(AbstractUser):
 
 class Review(models.Model):
     """Review model."""
-    title = models.IntegerField()  # Заглушка. Раскомментировать ниже, когда уберем заглушку
-    # title = models.ForeignKey(
+    title_id = models.IntegerField()  # Заглушка. Раскомментировать ниже, когда уберем заглушку
+    # title_id = models.ForeignKey(
     #     Title,
     #     # При удалении объекта произведения Title должны удаляться все
     #     # отзывы к этому произведению и комментарии к ним.
@@ -69,7 +69,7 @@ class Review(models.Model):
 
 class Comment(models.Model):
     """Comment model."""
-    rewiew = models.ForeignKey(
+    rewiew_id = models.ForeignKey(
         Review,
         # При удалении объекта отзыва Review должны быть удалены
         # все комментарии к этому отзыву.

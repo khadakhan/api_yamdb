@@ -58,7 +58,10 @@ class ReviewSerializer(ModelSerializer):
     )
 
     class Meta:
-        fields = '__all__'
+        fields = ('text',
+                  'author',
+                  'score',
+                  'pub_date')
         model = Review
         # На одно произведение пользователь может оставить только один отзыв.
         validators = [
@@ -77,7 +80,9 @@ class CommentSerializer(ModelSerializer):
     )
 
     class Meta:
-        fields = '__all__'
+        fields = ('text',
+                  'author',
+                  'pub_date')
         model = Comment
         read_only_fields = ('rewiew',)
 
