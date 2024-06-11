@@ -5,16 +5,18 @@ from rest_framework import filters, mixins, status, viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action, throttle_classes
 from rest_framework.permissions import (
-    AllowAny, IsAdminUser, IsAuthenticated, AuthorOrReadOnly)
+    AllowAny, IsAdminUser, IsAuthenticated)
 from rest_framework.response import Response
 from rest_framework.status import (
     HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND)
 from reviews.models import Category, Genre, Review
 
 from .throttling import TwoRequestsPerUserThrottle
+from .permissions import AuthorOrReadOnly
 from .serializers import (
     CategorySerializer, CommentSerializer, GenreSerializer,
     MyTokenObtainPairSerializer, ReviewSerializer, UserSerializer)
+
 
 User = get_user_model()
 

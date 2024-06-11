@@ -1,5 +1,5 @@
 from django.contrib.auth.models import AbstractUser, Group
-# from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 SCORES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -55,12 +55,12 @@ class Review(models.Model):
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='rewiews'
     )
-    # score = models.IntegerField(
-    #     default=5,
-    #     validators=[MaxValueValidator(10), MinValueValidator(1)]
-    # )
+    score = models.IntegerField(
+        default=5,
+        validators=[MaxValueValidator(10), MinValueValidator(1)]
+    )
 
-    score = models.IntegerField(choices=SCORES)
+    # score = models.IntegerField(choices=SCORES)
     pub_date = models.DateTimeField(
         'Дата публикации отзыва',
         auto_now_add=True
