@@ -5,7 +5,8 @@ from rest_framework.decorators import action
 from rest_framework.permissions import (
     AllowAny, IsAdminUser, IsAuthenticated)
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
+from rest_framework.status import (
+    HTTP_200_OK, HTTP_400_BAD_REQUEST)
 from reviews.models import Category, Genre, Review
 
 from .serializers import (
@@ -22,7 +23,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['create', 'signup', 'token']:
             return [AllowAny()]
-        elif self.action is 'me':
+        elif self.action == 'me':
             return [IsAuthenticated()]
         return [IsAdminUser()]
 
@@ -43,7 +44,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def token(self, request):
         serializer = MyTokenObtainPairSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response(serializer.errors, HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, HTTP_404_BAD_REQUEST)
         return Response(serializer.validated_data, status.HTTP_200_OK)
 
     @action(detail=False, methods=['get', 'patch'],
