@@ -1,21 +1,27 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from rest_framework.views import APIView
-from rest_framework import filters, mixins, status, viewsets
-from rest_framework.pagination import PageNumberPagination
+from django_filters.rest_framework import DjangoFilterBackend
+from reviews.models import Category, Genre, Review, Title
+from rest_framework import filters, mixins, viewsets
 from rest_framework.decorators import action, throttle_classes
+from rest_framework.views import APIView
 from rest_framework.permissions import (
     AllowAny, IsAdminUser, IsAuthenticated)
 from rest_framework.response import Response
 from rest_framework.status import (
     HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND)
-from reviews.models import Category, Genre, Review
 
+from .permissions import ReadOnly, AuthorOrReadOnly
 from .throttling import TwoRequestsPerUserThrottle
 from .permissions import AuthorOrReadOnly
 from .serializers import (
-    CategorySerializer, CommentSerializer, GenreSerializer,
-    MyTokenObtainPairSerializer, ReviewSerializer, UserSerializer)
+    CategorySerializer,
+    CommentSerializer,
+    GenreSerializer,
+    MyTokenObtainPairSerializer,
+    ReviewSerializer,
+    TitleSerializer,
+    UserSerializer)
 
 
 User = get_user_model()
@@ -68,7 +74,9 @@ class MyTokenObtainPairView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = MyTokenObtainPairSerializer(data=request.data)
         if serializer.is_valid():
-            return Response(serializer.validated_data['token'], status=HTTP_200_OK)
+            return Response(
+                serializer.validated_data['token'],
+                status=HTTP_200_OK)
         username = request.data.get('username')
         if username and not User.objects.filter(username=username).exists():
             return Response(status=HTTP_404_NOT_FOUND)
@@ -110,10 +118,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class BaseCreateListDestroyViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet):
+        mixins.CreateModelMixin,
+        mixins.ListModelMixin,
+        mixins.DestroyModelMixin,
+        viewsets.GenericViewSet):
     """Base class to provide create, list, destroy acts."""
 
 
@@ -121,7 +129,7 @@ class CategoryViewSet(BaseCreateListDestroyViewSet):
     """ViewSet for category."""
 
     queryset = Category.objects.all()
-    # TODO add permission class
+    permission_classes = (IsAdminUser | ReadOnly,)
     serializer_class = CategorySerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
@@ -132,8 +140,20 @@ class GenreViewSet(BaseCreateListDestroyViewSet):
     """ViewSet for genre."""
 
     queryset = Genre.objects.all()
-    # TODO add permission class
+    permission_classes = (IsAdminUser | ReadOnly,)
     serializer_class = GenreSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     lookup_field = 'slug'
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    """ViewSet for title."""
+
+    queryset = Title.objects.prefetch_related(
+        'genre').select_related('category')
+    permission_classes = (IsAdminUser | ReadOnly,)
+    http_method_names = ('get', 'post', 'patch', 'delete')
+    serializer_class = TitleSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ('category', 'genre', 'name', 'year')
