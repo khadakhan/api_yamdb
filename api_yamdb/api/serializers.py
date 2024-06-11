@@ -7,7 +7,8 @@ from django.core.mail import send_mail
 from rest_framework import serializers, status
 from rest_framework.serializers import ModelSerializer, ValidationError
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from reviews.models import Category, Comment, Genre, Review
+from rest_framework.validators import UniqueTogetherValidator
+from reviews.models import Category, Comment, Genre, Review, SCORES
 
 User = get_user_model()
 
@@ -61,26 +62,52 @@ class MyTokenObtainPairSerializer(serializers.Serializer):
                 'Неправильный username или код подтверждения.')
         return {'token': str(RefreshToken.for_user(user))}
 
+# # Это вычисляемое на лету поле rating для сериалайзера Title.
+# rating = serializers.SerializerMethodField()
+
+# def get_rating(self, obj):
+#     rating = None
+#     reviews = obj.reviews.all()
+#     for review in reviews:
+#         if review.score is not None:
+#             rating += review.score
+#     return rating / reviews.count()
+
 
 class ReviewSerializer(ModelSerializer):
+    """Review serializer."""
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True
     )
+    score = serializers.ChoiceField(choices=SCORES)
 
     class Meta:
-        fields = '__all__'
+        fields = ('text',
+                  'author',
+                  'score',
+                  'pub_date')
         model = Review
+        # На одно произведение пользователь может оставить только один отзыв.
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Review.objects.all(),
+                fields=('title', 'author')
+            )
+        ]
 
 
 class CommentSerializer(ModelSerializer):
+    """Comment serializer."""
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
     )
 
     class Meta:
-        fields = '__all__'
+        fields = ('text',
+                  'author',
+                  'pub_date')
         model = Comment
         read_only_fields = ('rewiew',)
 

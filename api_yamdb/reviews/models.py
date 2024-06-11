@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser, Group
-from django.core.validators import MaxValueValidator, MinValueValidator
+# from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+
+SCORES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 
 class User(AbstractUser):
@@ -40,15 +42,25 @@ class User(AbstractUser):
 
 
 class Review(models.Model):
-    title = models.IntegerField()  # Заглушка для ForeingKey(Title, )
+    """Review model."""
+    title_id = models.IntegerField()  # Заглушка. Раскомментировать ниже, когда уберем заглушку
+    # title_id = models.ForeignKey(
+    #     Title,
+    #     # При удалении объекта произведения Title должны удаляться все
+    #     # отзывы к этому произведению и комментарии к ним.
+    #     on_delete=models.CASCADE,
+    #     related_name='rewiews'
+    # )
     text = models.TextField()
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='rewiews'
     )
-    score = models.IntegerField(
-        default=5,
-        validators=[MaxValueValidator(10), MinValueValidator(1)]
-    )
+    # score = models.IntegerField(
+    #     default=5,
+    #     validators=[MaxValueValidator(10), MinValueValidator(1)]
+    # )
+
+    score = models.IntegerField(choices=SCORES)
     pub_date = models.DateTimeField(
         'Дата публикации отзыва',
         auto_now_add=True
@@ -60,8 +72,12 @@ class Review(models.Model):
 
 
 class Comment(models.Model):
-    rewiew = models.ForeignKey(
-        Review, on_delete=models.CASCADE,
+    """Comment model."""
+    rewiew_id = models.ForeignKey(
+        Review,
+        # При удалении объекта отзыва Review должны быть удалены
+        # все комментарии к этому отзыву.
+        on_delete=models.CASCADE,
         related_name='comments'
     )
     text = models.TextField()
