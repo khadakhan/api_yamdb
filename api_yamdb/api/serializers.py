@@ -1,17 +1,44 @@
+import random
+
 from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
 from rest_framework import serializers
+from rest_framework.serializers import ModelSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from reviews.models import Category, Genre, Comment, Review
+from reviews.models import Category, Comment, Genre, Review
 
 User = get_user_model()
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(ModelSerializer):
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
         extra_kwargs = {'password': {'write_only': True}}
+
+    def validate_username(self, value):
+        if value.lower() == 'me':
+            raise serializers.ValidationError(
+                "Имя пользователя 'me' недоступно")
+        return value
+
+    def create(self, validated_data):
+        user = super().create(validated_data)
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return user
+        confirmation_code = f'{random.randint(100000, 999999):06}'
+        user.confirmation_code = confirmation_code
+        user.save()
+        send_mail(
+            'Код подтверждения',
+            f'Ваш код подтверждения - {confirmation_code}',
+            'from@example.com',
+            [user.email],
+            fail_silently=False
+        )
+        return user
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -22,12 +49,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
 
-class TokenConfirmationSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    confirmation_code = serializers.CharField()
-
-
-class ReviewSerializer(serializers.ModelSerializer):
+class ReviewSerializer(ModelSerializer):
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True
@@ -38,7 +60,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
 
 
-class CommentSerializer(serializers.ModelSerializer):
+class CommentSerializer(ModelSerializer):
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
@@ -50,7 +72,7 @@ class CommentSerializer(serializers.ModelSerializer):
         read_only_fields = ('rewiew',)
 
 
-class CategorySerializer(serializers.ModelSerializer):
+class CategorySerializer(ModelSerializer):
     """Serializer for category viewset."""
 
     class Meta:
@@ -58,7 +80,7 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
 
 
-class GenreSerializer(serializers.ModelSerializer):
+class GenreSerializer(ModelSerializer):
     """Serializer for genre viewset."""
 
     class Meta:
