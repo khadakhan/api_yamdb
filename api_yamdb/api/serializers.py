@@ -49,6 +49,17 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['email'] = user.email
         return token
 
+# # Это вычисляемое на лету поле rating для сериалайзера Title.
+# rating = serializers.SerializerMethodField()
+
+# def get_rating(self, obj):
+#     rating = None
+#     reviews = obj.reviews.all()
+#     for review in reviews:
+#         if review.score is not None:
+#             rating += review.score
+#     return rating / reviews.count()
+
 
 class ReviewSerializer(ModelSerializer):
     """Review serializer."""
