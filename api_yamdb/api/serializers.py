@@ -5,6 +5,7 @@ from django.core.mail import send_mail
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework.validators import UniqueTogetherValidator
 from reviews.models import Category, Comment, Genre, Review
 
 User = get_user_model()
@@ -50,6 +51,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class ReviewSerializer(ModelSerializer):
+    """Review serializer."""
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True
@@ -58,9 +60,17 @@ class ReviewSerializer(ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Review
+        # На одно произведение пользователь может оставить только один отзыв.
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Review.objects.all(),
+                fields=('title', 'author')
+            )
+        ]
 
 
 class CommentSerializer(ModelSerializer):
+    """Comment serializer."""
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,

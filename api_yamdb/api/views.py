@@ -2,12 +2,14 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import (
     AllowAny, IsAdminUser, IsAuthenticated)
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
-from reviews.models import Category, Genre, Review
 
+from reviews.models import Category, Genre  #, Title
+from .permissions import AuthorOrReadOnly
 from .serializers import (
     CategorySerializer, CommentSerializer, GenreSerializer,
     MyTokenObtainPairSerializer, ReviewSerializer, UserSerializer)
@@ -61,24 +63,37 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
+    """Viewset for comments."""
     serializer_class = CommentSerializer
+    permission_classes = (AuthorOrReadOnly,)
+
+    def get_title(self):
+        return get_object_or_404(Title, id=self.kwargs.get('title_id'))
 
     def get_review(self):
-        return get_object_or_404(Review, id=self.kwargs.get('review_id'))
+        return get_object_or_404(self.get_title().reviews.all(),
+                                 id=self.kwargs.get('review_id'))
 
     def get_queryset(self):
         return self.get_review().comments.all()
 
     def perform_create(self, serializer):
-        serializer.save(post=self.get_review(), author=self.request.user)
+        serializer.save(review=self.get_review(), author=self.request.user)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
-    queryset = Review.objects.all()
+    """Viewset for reviews."""
     serializer_class = ReviewSerializer
+    permission_classes = (AuthorOrReadOnly,)
+
+    def get_title(self):
+        return get_object_or_404(Title, id=self.kwargs.get('title_id'))
+
+    def get_queryset(self):
+        return self.get_title().reviews.all()
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        serializer.save(title=self.get_title(), author=self.request.user)
 
 
 class BaseCreateListDestroyViewSet(
