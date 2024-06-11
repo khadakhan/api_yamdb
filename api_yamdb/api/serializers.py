@@ -1,14 +1,14 @@
 import random
 from datetime import datetime
 
-from django.contrib.admin.filters import ValidationError
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
+from django.db.models import Avg
 from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from reviews.models import Category, Comment, Genre, Review, Title
+from reviews.models import Category, Comment, Genre, Review, Title, SCORES
+from rest_framework.serializers import ModelSerializer, ValidationError
+from rest_framework.validators import UniqueTogetherValidator
 
 User = get_user_model()
 
@@ -38,50 +38,76 @@ class UserSerializer(ModelSerializer):
         return value
 
     def create(self, validated_data):
-        user = super().create(validated_data)
+        user, created = User.objects.get_or_create(**validated_data)
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return user
-        confirmation_code = f'{random.randint(100000, 999999):06}'
-        user.confirmation_code = confirmation_code
+        if not created:
+            user.save()
+        code = f'{random.randint(100000, 999999):06}'
+        user.confirmation_code = code
         user.save()
         send_mail(
             'Код подтверждения',
-            f'Ваш код подтверждения - {confirmation_code}',
+            f'Ваш код подтверждения - {code}',
             'from@example.com',
             [user.email],
-            fail_silently=False
-        )
+            fail_silently=False)
         return user
 
 
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        token['email'] = user.email
-        return token
+class MyTokenObtainPairSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    confirmation_code = serializers.CharField()
+
+    def validate(self, attrs):
+        username = attrs.get('username')
+        confirmation_code = attrs.get('confirmation_code')
+        if not username or not confirmation_code:
+            raise ValidationError(
+                'Username and код подтверждения обязательны.')
+        user = User.objects.filter(
+            username=username, confirmation_code=confirmation_code).first()
+        if not user:
+            raise ValidationError(
+                'Неправильный username или код подтверждения.')
+        return attrs
 
 
 class ReviewSerializer(ModelSerializer):
+    """Review serializer."""
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True
     )
+    score = serializers.ChoiceField(choices=SCORES)
 
     class Meta:
-        fields = '__all__'
+        fields = ('text',
+                  'author',
+                  'score',
+                  'pub_date')
         model = Review
+        # На одно произведение пользователь может оставить только один отзыв.
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Review.objects.all(),
+                fields=('title', 'author')
+            )
+        ]
 
 
 class CommentSerializer(ModelSerializer):
+    """Comment serializer."""
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
     )
 
     class Meta:
-        fields = '__all__'
+        fields = ('text',
+                  'author',
+                  'pub_date')
         model = Comment
         read_only_fields = ('rewiew',)
 
@@ -114,11 +140,15 @@ class TitleSerializer(serializers.ModelSerializer):
     """Serializer for title viewset."""
 
     genre = GenreAnotherSerializer(many=True)
+    rating = serializers.SerializerMethodField()
     category = CategoryAnotherSerializer()
 
     class Meta:
         fields = ('id', 'name', 'year', 'description', 'genre', 'category')
         model = Title
+
+    def get_rating(self, title):
+        return int(title.reviews.annotate(Avg('score'), default=None))
 
     def validate_year(self, creation_year):
         if creation_year > datetime.now().year:

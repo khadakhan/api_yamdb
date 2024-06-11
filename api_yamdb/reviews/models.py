@@ -2,6 +2,8 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
+SCORES = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+
 
 class User(AbstractUser):
     ROLE_CHOICES = (
@@ -39,45 +41,6 @@ class User(AbstractUser):
         return self.email
 
 
-class Review(models.Model):
-    title = models.IntegerField()  # Заглушка для ForeingKey(Title, )
-    text = models.TextField()
-    author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='rewiews'
-    )
-    score = models.IntegerField(
-        default=5,
-        validators=[MaxValueValidator(10), MinValueValidator(1)]
-    )
-    pub_date = models.DateTimeField(
-        'Дата публикации отзыва',
-        auto_now_add=True
-    )
-
-    class Meta:
-        verbose_name = 'Отзыв'
-        verbose_name_plural = 'Отзывы'
-
-
-class Comment(models.Model):
-    rewiew = models.ForeignKey(
-        Review, on_delete=models.CASCADE,
-        related_name='comments'
-    )
-    text = models.TextField()
-    author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='comments'
-    )
-    pub_date = models.DateTimeField(
-        'Дата публикации комментария',
-        auto_now_add=True
-    )
-
-    class Meta:
-        verbose_name = 'Комментарий'
-        verbose_name_plural = 'Комментарии'
-
-
 class Category(models.Model):
     """Model of category."""
     name = models.CharField(max_length=256, verbose_name='Название категории')
@@ -91,7 +54,7 @@ class Category(models.Model):
         verbose_name_plural = 'Категории'
 
     def __str__(self):
-        return self.name  # TODO: fix this title
+        return self.name
 
 
 class Genre(models.Model):
@@ -137,3 +100,54 @@ class Title(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Review(models.Model):
+    """Review model."""
+    title_id = models.ForeignKey(
+        Title,
+        # При удалении объекта произведения Title должны удаляться все
+        # отзывы к этому произведению и комментарии к ним.
+        on_delete=models.CASCADE,
+        related_name='rewiews'
+    )
+    text = models.TextField()
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='rewiews'
+    )
+    score = models.IntegerField(
+        default=5,
+        validators=[MaxValueValidator(10), MinValueValidator(1)]
+    )
+
+    pub_date = models.DateTimeField(
+        'Дата публикации отзыва',
+        auto_now_add=True
+    )
+
+    class Meta:
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
+
+
+class Comment(models.Model):
+    """Comment model."""
+    rewiew_id = models.ForeignKey(
+        Review,
+        # При удалении объекта отзыва Review должны быть удалены
+        # все комментарии к этому отзыву.
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
+    text = models.TextField()
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='comments'
+    )
+    pub_date = models.DateTimeField(
+        'Дата публикации комментария',
+        auto_now_add=True
+    )
+
+    class Meta:
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
