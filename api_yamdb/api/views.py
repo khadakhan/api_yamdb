@@ -1,4 +1,5 @@
 from rest_framework import filters, viewsets, mixins
+from django_filters.rest_framework import DjangoFilterBackend
 
 from api.serializers import (
     CategorySerializer,
@@ -43,7 +44,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.prefetch_related(
         'genre').select_related('category')
     # TODO add permission class
-    http_method_names = ['get', 'post', 'patch', 'delete'] 
+    http_method_names = ('get', 'post', 'patch', 'delete')
     serializer_class = TitleSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('category', 'genre', 'name', 'year')
