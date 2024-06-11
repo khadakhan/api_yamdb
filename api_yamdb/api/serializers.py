@@ -43,8 +43,6 @@ class UserSerializer(ModelSerializer):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return user
-        if not created:
-            user.save()
         code = f'{random.randint(100000, 999999):06}'
         user.confirmation_code = code
         user.save()

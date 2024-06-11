@@ -1,17 +1,14 @@
 from django.urls import include, path
 from rest_framework.routers import SimpleRouter
 
-
 from .views import (
     CategoryViewSet,
     GenreViewSet,
     TitleViewSet,
     UserViewSet,
-    MyTokenObtainPairView,
+    AuthViewSet,
     CommentViewSet,
     ReviewViewSet)
-
-
 
 app_name = 'api'
 
@@ -27,14 +24,13 @@ v1_router.register(r'titles/(?P<title_id>.+?)/reviews/{review_id}/comments',
                    CommentViewSet,
                    basename='comments')
 
-
 urlpatterns = [
     path('v1/', include(v1_router.urls)),
     path('v1/auth/token/',
-         MyTokenObtainPairView.as_view(),
+         AuthViewSet.as_view({'post': 'token'}),
          name='token_obtain_pair'),
     path('v1/auth/signup/',
-         UserViewSet.as_view({'post': 'signup'}),
+         AuthViewSet.as_view({'post': 'signup'}),
          name='signup'),
     path('v1/users/me/',
          UserViewSet.as_view({'get': 'me', 'patch': 'me'}),

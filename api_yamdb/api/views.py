@@ -4,7 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from reviews.models import Category, Genre, Review, Title
 from rest_framework import filters, mixins, viewsets
 from rest_framework.decorators import action, throttle_classes
-from rest_framework.views import APIView
+from rest_framework.viewsets import ViewSet
 from rest_framework.permissions import (
     AllowAny, IsAdminUser, IsAuthenticated)
 from rest_framework.response import Response
@@ -32,26 +32,9 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
 
     def get_permissions(self):
-        if self.action == 'signup':
-            return [AllowAny()]
-        elif self.action in ['me', 'create']:
+        if self.action in ['me', 'create']:
             return [IsAuthenticated()]
         return [IsAdminUser()]
-
-    def get_serializer_context(self):
-        return {'request': self.request}
-
-    @action(detail=False, methods=['post'],
-            permission_classes=[AllowAny])
-    @throttle_classes([TwoRequestsPerUserThrottle])
-    def signup(self, request):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            return Response(
-                {'username': user.username, 'email': user.email},
-                status=HTTP_200_OK)
-        return Response(serializer.errors, HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get', 'patch'],
             permission_classes=[IsAuthenticated])
@@ -68,14 +51,28 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
 
 
-class MyTokenObtainPairView(APIView):
+class AuthViewSet(ViewSet):
     permission_classes = [AllowAny]
 
-    def post(self, request, *args, **kwargs):
+    def get_serializer_context(self):
+        return {'request': self.request}
+
+    @action(detail=False, methods=['post'])
+    def signup(self, request):
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response(
+                data={'username': user.username, 'email': user.email},
+                status=HTTP_200_OK)
+        return Response(serializer.errors, HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'])
+    def token(self, request, *args, **kwargs):
         serializer = MyTokenObtainPairSerializer(data=request.data)
         if serializer.is_valid():
             return Response(
-                serializer.validated_data['token'],
+                data={'token': str(RefreshToken.for_user(request.user))},
                 status=HTTP_200_OK)
         username = request.data.get('username')
         if username and not User.objects.filter(username=username).exists():
