@@ -46,8 +46,7 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, HTTP_400_BAD_REQUEST)
         return Response(serializer.validated_data, status.HTTP_200_OK)
 
-    @action(detail=False,
-            methods=['get', 'patch'],
+    @action(detail=False, methods=['get', 'patch'],
             permission_classes=[IsAuthenticated])
     def me(self, request):
         if request.method == 'GET':
