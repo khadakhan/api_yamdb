@@ -1,15 +1,17 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from rest_framework.views import APIView
 from rest_framework import filters, mixins, status, viewsets
-from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import action, throttle_classes
 from rest_framework.permissions import (
-    AllowAny, IsAdminUser, IsAuthenticated)
+    AllowAny, IsAdminUser, IsAuthenticated, AuthorOrReadOnly)
 from rest_framework.response import Response
-from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
+from rest_framework.status import (
+    HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND)
+from reviews.models import Category, Genre, Review
 
-from reviews.models import Category, Genre  #, Title
-from .permissions import AuthorOrReadOnly
+from .throttling import TwoRequestsPerUserThrottle
 from .serializers import (
     CategorySerializer, CommentSerializer, GenreSerializer,
     MyTokenObtainPairSerializer, ReviewSerializer, UserSerializer)
@@ -22,9 +24,9 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
 
     def get_permissions(self):
-        if self.action in ['create', 'signup', 'token']:
+        if self.action == 'signup':
             return [AllowAny()]
-        elif self.action is 'me':
+        elif self.action in ['me', 'create']:
             return [IsAuthenticated()]
         return [IsAdminUser()]
 
@@ -33,20 +35,15 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'],
             permission_classes=[AllowAny])
+    @throttle_classes([TwoRequestsPerUserThrottle])
     def signup(self, request):
         serializer = self.get_serializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, HTTP_400_BAD_REQUEST)
-        serializer.save()
-        return Response(serializer.validated_data, HTTP_200_OK)
-
-    @action(detail=False, methods=['post'],
-            permission_classes=[AllowAny])
-    def token(self, request):
-        serializer = MyTokenObtainPairSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, HTTP_400_BAD_REQUEST)
-        return Response(serializer.validated_data, status.HTTP_200_OK)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response(
+                {'username': user.username, 'email': user.email},
+                status=HTTP_200_OK)
+        return Response(serializer.errors, HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get', 'patch'],
             permission_classes=[IsAuthenticated])
@@ -54,12 +51,26 @@ class UserViewSet(viewsets.ModelViewSet):
         if request.method == 'GET':
             serializer = self.get_serializer(request.user)
             return Response(serializer.data)
+
         elif request.method == 'PATCH':
             serializer = self.get_serializer(
-                request.user, request.data, partial=True)
+                request.user, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data)
+
+
+class MyTokenObtainPairView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = MyTokenObtainPairSerializer(data=request.data)
+        if serializer.is_valid():
+            return Response(serializer.validated_data['token'], status=HTTP_200_OK)
+        username = request.data.get('username')
+        if username and not User.objects.filter(username=username).exists():
+            return Response(status=HTTP_404_NOT_FOUND)
+        return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
 
 
 class CommentViewSet(viewsets.ModelViewSet):

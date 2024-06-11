@@ -1,9 +1,11 @@
 import random
 
+from django.shortcuts import get_object_or_404
+from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
-from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer
+from rest_framework import serializers, status
+from rest_framework.serializers import ModelSerializer, ValidationError
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.validators import UniqueTogetherValidator
 from reviews.models import Category, Comment, Genre, Review, SCORES
@@ -25,29 +27,40 @@ class UserSerializer(ModelSerializer):
         return value
 
     def create(self, validated_data):
-        user = super().create(validated_data)
+        user, created = User.objects.get_or_create(**validated_data)
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return user
-        confirmation_code = f'{random.randint(100000, 999999):06}'
-        user.confirmation_code = confirmation_code
+        if not created:
+            user.save()
+        code = f'{random.randint(100000, 999999):06}'
+        user.confirmation_code = code
         user.save()
         send_mail(
             'Код подтверждения',
-            f'Ваш код подтверждения - {confirmation_code}',
+            f'Ваш код подтверждения - {code}',
             'from@example.com',
             [user.email],
-            fail_silently=False
-        )
+            fail_silently=False)
         return user
 
 
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        token['email'] = user.email
-        return token
+class MyTokenObtainPairSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    confirmation_code = serializers.CharField()
+
+    def validate(self, attrs):
+        username = attrs.get('username')
+        confirmation_code = attrs.get('confirmation_code')
+        if not username or not confirmation_code:
+            raise ValidationError(
+                'Username and код подтверждения обязательны.')
+        user = User.objects.filter(
+            username=username, confirmation_code=confirmation_code).first()
+        if not user:
+            raise ValidationError(
+                'Неправильный username или код подтверждения.')
+        return {'token': str(RefreshToken.for_user(user))}
 
 # # Это вычисляемое на лету поле rating для сериалайзера Title.
 # rating = serializers.SerializerMethodField()
