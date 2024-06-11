@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Group
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
@@ -119,6 +119,7 @@ class Review(models.Model):
         default=5,
         validators=[MaxValueValidator(10), MinValueValidator(1)]
     )
+
 
     pub_date = models.DateTimeField(
         'Дата публикации отзыва',
