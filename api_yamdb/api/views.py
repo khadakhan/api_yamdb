@@ -13,6 +13,7 @@ from rest_framework.status import (
 
 from .permissions import ReadOnly, AuthorOrReadOnly
 from .throttling import TwoRequestsPerUserThrottle
+from .permissions import AuthorOrReadOnly
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
@@ -21,6 +22,7 @@ from .serializers import (
     ReviewSerializer,
     TitleSerializer,
     UserSerializer)
+
 
 User = get_user_model()
 
