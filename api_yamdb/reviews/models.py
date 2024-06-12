@@ -14,10 +14,7 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     confirmation_code = models.CharField(
         max_length=6,
-<<<<<<< HEAD
         default=0,
-=======
->>>>>>> origin/develop
         blank=True)
     first_name = models.CharField(
         max_length=30,
