@@ -6,13 +6,14 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.core.mail import send_mail
 from reviews.models import Category, Genre, Review, Title
 from rest_framework import filters, mixins, viewsets
-from rest_framework.decorators import action, throttle_classes
+from rest_framework.decorators import action
 from rest_framework.viewsets import ViewSet
 from rest_framework.permissions import (
     AllowAny, IsAdminUser, IsAuthenticated)
 from rest_framework.response import Response
 from rest_framework.status import (
-    HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND)
+    HTTP_200_OK, HTTP_400_BAD_REQUEST,
+    HTTP_404_NOT_FOUND, HTTP_405_METHOD_NOT_ALLOWED)
 
 from .filters import TitleFilter
 from .permissions import IsAdmin, ReadOnly, AuthorOrReadOnly
@@ -42,11 +43,12 @@ def send_code(user):
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    """ViewSet for user flows."""
     queryset = User.objects.all()
     serializer_class = UserSerializer
     http_method_names = ('get', 'post', 'patch', 'delete')
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('role',)
+    search_fields = ('username',)
     lookup_field = 'username'
 
     def get_permissions(self):
@@ -54,16 +56,19 @@ class UserViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated()]
         return [IsAdmin()]
 
-    @action(detail=False, methods=['get', 'patch'],
+    @action(detail=False, methods=['get', 'patch', 'delete'],
             permission_classes=[IsAuthenticated])
     def me(self, request):
         self.kwargs['username'] = request.user.username
+        if request.method == 'DELETE':
+            return Response(status=HTTP_405_METHOD_NOT_ALLOWED)
         if request.method == 'GET':
             return self.retrieve(request)
         return self.partial_update(request)
 
 
 class AuthViewSet(ViewSet):
+    """ViewSet for authentication and token."""
 
     @action(detail=False, methods=['post'])
     def signup(self, request):
