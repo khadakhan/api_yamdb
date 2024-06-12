@@ -14,6 +14,7 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     confirmation_code = models.CharField(
         max_length=6,
+        default=0,
         blank=True)
     first_name = models.CharField(
         max_length=30,
@@ -85,7 +86,7 @@ class Title(models.Model):
         verbose_name='Название произведения')
     year = models.IntegerField(verbose_name='Год создания произведения')
     description = models.TextField(
-        null=True,
+        default='',
         blank=True,
         verbose_name='Описание произведения')
     genre = models.ManyToManyField(
