@@ -74,6 +74,16 @@ class MyTokenObtainPairSerializer(serializers.Serializer):
         return data
 
 
+class TitleIdDefault:
+    """
+    Class for extract title_id.
+    """
+    requires_context = True
+
+    def __call__(self, serializer_field):
+        return serializer_field.context['request'].data.get('title_id')
+
+
 class ReviewSerializer(ModelSerializer):
     """Review serializer."""
     author = serializers.SlugRelatedField(
@@ -81,9 +91,11 @@ class ReviewSerializer(ModelSerializer):
         read_only=True
     )
     score = serializers.ChoiceField(choices=SCORES)
+    title_id = serializers.HiddenField(default=TitleIdDefault())
 
     class Meta:
         fields = ('text',
+                  'title_id',
                   'author',
                   'score',
                   'pub_date')
@@ -92,7 +104,7 @@ class ReviewSerializer(ModelSerializer):
         validators = [
             UniqueTogetherValidator(
                 queryset=Review.objects.all(),
-                fields=('title', 'author')
+                fields=('title_id', 'author')
             )
         ]
 

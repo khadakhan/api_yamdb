@@ -104,7 +104,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     """Viewset for reviews."""
     serializer_class = ReviewSerializer
-    permission_classes = (AuthorOrReadOnly,)
+    # permission_classes = (AuthorOrReadOnly,)
 
     def get_title(self):
         return get_object_or_404(Title, id=self.kwargs.get('title_id'))
