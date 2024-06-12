@@ -88,6 +88,7 @@ class TitleIdDefault:
 class ReviewSerializer(ModelSerializer):
     """Review serializer."""
     author = serializers.SlugRelatedField(
+        default=serializers.CurrentUserDefault(),
         slug_field='username',
         read_only=True
     )
@@ -105,7 +106,9 @@ class ReviewSerializer(ModelSerializer):
         validators = [
             UniqueTogetherValidator(
                 queryset=Review.objects.all(),
-                fields=('title_id', 'author')
+                fields=('title_id', 'author'),
+                message=("Пользователь может лишь один раз оставить отзыв"
+                         "к произведению!")
             )
         ]
 
