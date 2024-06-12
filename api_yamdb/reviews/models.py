@@ -14,17 +14,15 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     confirmation_code = models.CharField(
         max_length=6,
-        blank=True,
-        null=True)
+        default=0,
+        blank=True)
     first_name = models.CharField(
         max_length=30,
-        blank=True,
-        null=True)
+        blank=True)
     last_name = models.CharField(
         max_length=30,
-        blank=True,
-        null=True)
-    bio = models.TextField(blank=True, null=True)
+        blank=True)
+    bio = models.TextField(blank=True)
     role = models.CharField(
         max_length=20,
         choices=ROLE_CHOICES,
@@ -88,7 +86,7 @@ class Title(models.Model):
         verbose_name='Название произведения')
     year = models.IntegerField(verbose_name='Год создания произведения')
     description = models.TextField(
-        null=True,
+        default='',
         blank=True,
         verbose_name='Описание произведения')
     genre = models.ManyToManyField(
