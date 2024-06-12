@@ -20,7 +20,7 @@ v1_router.register('titles', TitleViewSet)
 v1_router.register(r'titles/(?P<title_id>.+?)/reviews',
                    ReviewViewSet,
                    basename='reviews')
-v1_router.register(r'titles/(?P<title_id>.+?)/reviews/?P<review_id>d+/comments',
+v1_router.register(r'titles/(?P<title_id>.+?)/reviews/(?P<review_id>\d+)/comments',
                    CommentViewSet,
                    basename='comments')
 

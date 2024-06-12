@@ -117,20 +117,25 @@ class Review(models.Model):
         # При удалении объекта произведения Title должны удаляться все
         # отзывы к этому произведению и комментарии к ним.
         on_delete=models.CASCADE,
-        related_name='reviews'
+        related_name='reviews',
+        verbose_name='Идентификатор произведения'
     )
-    text = models.TextField()
+    text = models.TextField(verbose_name='Текст отзыва')
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='rewiews'
+        User,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='Автор отзыва'
     )
     score = models.IntegerField(
         default=5,
-        validators=[MaxValueValidator(10), MinValueValidator(1)]
+        validators=[MaxValueValidator(10), MinValueValidator(1)],
+        verbose_name='Оценка произведения'
     )
 
     pub_date = models.DateTimeField(
         'Дата публикации отзыва',
-        auto_now_add=True
+        auto_now_add=True,
     )
 
     class Meta:
@@ -145,15 +150,17 @@ class Comment(models.Model):
         # При удалении объекта отзыва Review должны быть удалены
         # все комментарии к этому отзыву.
         on_delete=models.CASCADE,
-        related_name='comments'
+        related_name='comments',
+        verbose_name='Идентификатор отзыва'
     )
     text = models.TextField()
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='comments'
+        User, on_delete=models.CASCADE, related_name='comments',
+        verbose_name='Автор комментария'
     )
     pub_date = models.DateTimeField(
         'Дата публикации комментария',
-        auto_now_add=True
+        auto_now_add=True,
     )
 
     class Meta:

@@ -2,7 +2,7 @@ import csv
 
 
 def csv_parse(file, row_parser, *args):
-    with open(file[0].name) as f:
+    with open(file[0].name, encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
             row_parser(row, *args)
