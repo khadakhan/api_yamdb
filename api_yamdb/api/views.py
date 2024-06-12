@@ -59,7 +59,8 @@ class AuthViewSet(ViewSet):
 
     @action(detail=False, methods=['post'])
     def signup(self, request):
-        serializer = UserSerializer(data=request.data, context=self.get_serializer_context())
+        serializer = UserSerializer(
+            data=request.data, context=self.get_serializer_context())
         if serializer.is_valid():
             user = serializer.save()
             return Response(
@@ -71,8 +72,9 @@ class AuthViewSet(ViewSet):
     def token(self, request, *args, **kwargs):
         serializer = MyTokenObtainPairSerializer(data=request.data)
         if serializer.is_valid():
+            user = serializer.validated_data['user']
             return Response(
-                data={'token': str(RefreshToken.for_user(request.user))},
+                data={'token': str(RefreshToken.for_user(user).access_token)},
                 status=HTTP_200_OK)
         username = request.data.get('username')
         if username and not User.objects.filter(username=username).exists():

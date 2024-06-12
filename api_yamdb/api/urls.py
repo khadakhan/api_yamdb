@@ -25,7 +25,7 @@ v1_router.register(r'titles/(?P<title_id>.+?)/reviews/?P<review_id>d+/comments',
                    basename='comments')
 
 urlpatterns = [
-    path('v1/', include(v1_router.urls)),
+
     path('v1/auth/token/',
          AuthViewSet.as_view({'post': 'token'}),
          name='token_obtain_pair'),
@@ -35,4 +35,5 @@ urlpatterns = [
     path('v1/users/me/',
          UserViewSet.as_view({'get': 'me', 'patch': 'me'}),
          name='user_profile'),
+    path('v1/', include(v1_router.urls)),
 ]
