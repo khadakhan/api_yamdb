@@ -33,7 +33,7 @@ urlpatterns = [
          AuthViewSet.as_view({'post': 'signup'}),
          name='signup'),
     path('v1/users/me/',
-         UserViewSet.as_view({'get': 'me', 'patch': 'me'}),
+         UserViewSet.as_view({'get': 'me', 'patch': 'me', 'delete': 'me'}),
          name='user_profile'),
     path('v1/', include(v1_router.urls)),
 ]

@@ -27,6 +27,7 @@ class BaseConnectorToSlug:
 
 
 class UserSerializer(ModelSerializer):
+    """User serializer."""
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name',
@@ -38,8 +39,13 @@ class UserSerializer(ModelSerializer):
                 "Имя пользователя 'me' недоступно")
         return value
 
+    def update(self, instance, validated_data):
+        validated_data.pop('role', None)
+        return super().update(instance, validated_data)
+
 
 class TokenSerializer(serializers.Serializer):
+    """Token serializer."""
     username = serializers.CharField()
     confirmation_code = serializers.CharField()
 
@@ -58,9 +64,7 @@ class TokenSerializer(serializers.Serializer):
 
 
 class TitleIdDefault:
-    """
-    Class for extract title_id.
-    """
+    """Class for extracting title_id."""
     requires_context = True
 
     def __call__(self, serializer_field):
