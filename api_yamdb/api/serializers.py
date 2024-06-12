@@ -71,6 +71,7 @@ class MyTokenObtainPairSerializer(serializers.Serializer):
         if not user:
             raise ValidationError(
                 'Неправильный username или код подтверждения.')
+        data['user'] = user
         return data
 
 
