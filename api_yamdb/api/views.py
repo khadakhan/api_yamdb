@@ -1,8 +1,9 @@
+import random
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework_simplejwt.tokens import RefreshToken
 from django_filters.rest_framework import DjangoFilterBackend
-from .filters import TitleFilter
+from django.core.mail import send_mail
 from reviews.models import Category, Genre, Review, Title
 from rest_framework import filters, mixins, viewsets
 from rest_framework.decorators import action, throttle_classes
@@ -13,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.status import (
     HTTP_200_OK, HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND)
 
+from .filters import TitleFilter
 from .permissions import IsAdmin, ReadOnly, AuthorOrReadOnly
 from .throttling import TwoRequestsPerUserThrottle
 from .permissions import AuthorOrReadOnly
@@ -20,12 +22,23 @@ from .serializers import (
     CategorySerializer,
     CommentSerializer,
     GenreSerializer,
-    MyTokenObtainPairSerializer,
+    TokenSerializer,
     ReviewSerializer,
     TitleSerializer,
     UserSerializer)
 
 User = get_user_model()
+
+
+def send_code(user):
+    user.confirmation_code = f'{random.randint(0, 999999):06}'
+    user.save()
+    send_mail(
+        subject='Код подтверждения',
+        message=f'Ваш код подтверждения - {user.confirmation_code}',
+        from_email='from@example.com',
+        recipient_list=[user.email],
+        fail_silently=False)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -51,17 +64,21 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class AuthViewSet(ViewSet):
-    permission_classes = [AllowAny]
-
-    def get_serializer_context(self):
-        return {'request': self.request}
 
     @action(detail=False, methods=['post'])
     def signup(self, request):
-        serializer = UserSerializer(
-            data=request.data, context=self.get_serializer_context())
+        username = request.data.get('username')
+        existing_user = User.objects.filter(
+            email=request.data.get('email')).first()
+        if existing_user and existing_user.username == username:
+            send_code(existing_user)
+            return Response(
+                data={'message': 'Новый код отправлен на почту'},
+                status=HTTP_200_OK)
+        serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
+            send_code(user)
             return Response(
                 data={'username': user.username, 'email': user.email},
                 status=HTTP_200_OK)
@@ -69,7 +86,7 @@ class AuthViewSet(ViewSet):
 
     @action(detail=False, methods=['post'])
     def token(self, request, *args, **kwargs):
-        serializer = MyTokenObtainPairSerializer(data=request.data)
+        serializer = TokenSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
             return Response(
