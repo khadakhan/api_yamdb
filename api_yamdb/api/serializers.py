@@ -48,9 +48,12 @@ class TokenSerializer(serializers.Serializer):
         confirmation_code = data.get('confirmation_code')
         if not username or not confirmation_code:
             raise ValidationError(
-                'Username и код подтверждения обязательны.')
-        data['user'] = get_object_or_404(
-            User, username=username, confirmation_code=confirmation_code)
+                'Имя пользователя и код подтверждения обязательны.')
+        user = User.objects.filter(
+            username=username, confirmation_code=confirmation_code).first()
+        if user is None:
+            raise ValidationError('Неправильный код или имя пользователя.')
+        data['user'] = user
         return data
 
 
