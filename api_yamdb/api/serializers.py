@@ -3,7 +3,7 @@ from datetime import datetime
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.mail import send_mail
+
 from django.db.models import Avg, IntegerField
 from django.db.models.functions import Cast
 from rest_framework import serializers
@@ -31,29 +31,11 @@ class UserSerializer(ModelSerializer):
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
 
-    def validate(self, data):
-        username = data.get('username')
-        email = data.get('email')
-        if username.lower() == 'me':
+    def validate_username(self, value):
+        if value.lower() == 'me':
             raise serializers.ValidationError(
                 "Имя пользователя 'me' недоступно")
-        return data
-
-    def create(self, validated_data):
-        user, created = User.objects.get_or_create(**validated_data)
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return user
-        code = f'{random.randint(100000, 999999):06}'
-        user.confirmation_code = code
-        user.save()
-        send_mail(
-            'Код подтверждения',
-            f'Ваш код подтверждения - {code}',
-            'from@example.com',
-            [user.email],
-            fail_silently=False)
-        return user
+        return value
 
 
 class MyTokenObtainPairSerializer(serializers.Serializer):
