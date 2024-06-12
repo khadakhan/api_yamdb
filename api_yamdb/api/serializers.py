@@ -4,6 +4,7 @@ from datetime import datetime
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 
+from django.shortcuts import get_object_or_404
 from django.db.models import Avg, IntegerField
 from django.db.models.functions import Cast
 from rest_framework import serializers
@@ -39,13 +40,15 @@ class UserSerializer(ModelSerializer):
 
 
 class TokenSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    confirmation_code = serializers.CharField()
 
     def validate(self, data):
         username = data.get('username')
         confirmation_code = data.get('confirmation_code')
         if not username or not confirmation_code:
             raise ValidationError(
-                'Username and код подтверждения обязательны.')
+                'Username и код подтверждения обязательны.')
         data['user'] = get_object_or_404(
             User, username=username, confirmation_code=confirmation_code)
         return data
