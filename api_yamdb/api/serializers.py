@@ -38,9 +38,7 @@ class UserSerializer(ModelSerializer):
         return value
 
 
-class MyTokenObtainPairSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    confirmation_code = serializers.CharField()
+class TokenSerializer(serializers.Serializer):
 
     def validate(self, data):
         username = data.get('username')
@@ -48,12 +46,8 @@ class MyTokenObtainPairSerializer(serializers.Serializer):
         if not username or not confirmation_code:
             raise ValidationError(
                 'Username and код подтверждения обязательны.')
-        user = User.objects.filter(
-            username=username, confirmation_code=confirmation_code).first()
-        if not user:
-            raise ValidationError(
-                'Неправильный username или код подтверждения.')
-        data['user'] = user
+        data['user'] = get_object_or_404(
+            User, username=username, confirmation_code=confirmation_code)
         return data
 
 

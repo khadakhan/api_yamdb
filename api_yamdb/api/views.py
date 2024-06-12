@@ -21,12 +21,23 @@ from .serializers import (
     CategorySerializer,
     CommentSerializer,
     GenreSerializer,
-    MyTokenObtainPairSerializer,
+    TokenSerializer,
     ReviewSerializer,
     TitleSerializer,
     UserSerializer)
 
 User = get_user_model()
+
+
+def send_code(user):
+    user.confirmation_code = f'{random.randint(100000, 999999):06}'
+    user.save()
+    send_mail(
+        subject='Код подтверждения',
+        message=f'Ваш код подтверждения - {user.confirmation_code}',
+        from_email='from@example.com',
+        recipient_list=[user.email],
+        fail_silently=False)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -50,22 +61,21 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class AuthViewSet(ViewSet):
-    permission_classes = [AllowAny]
 
     @action(detail=False, methods=['post'])
     def signup(self, request):
+        username = request.data.get('username')
+        existing_user = User.objects.filter(
+            email=request.data.get('email')).first()
+        if existing_user and existing_user.username == username:
+            send_code(existing_user)
+            return Response(
+                data={'message': 'Новый код отправлен на почту'},
+                status=HTTP_200_OK)
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            code = f'{random.randint(100000, 999999):06}'
-            user.confirmation_code = code
-            user.save()
-            send_mail(
-                'Код подтверждения',
-                f'Ваш код подтверждения - {code}',
-                'from@example.com',
-                [user.email],
-                fail_silently=False)
+            send_code(user)
             return Response(
                 data={'username': user.username, 'email': user.email},
                 status=HTTP_200_OK)
@@ -73,7 +83,7 @@ class AuthViewSet(ViewSet):
 
     @action(detail=False, methods=['post'])
     def token(self, request, *args, **kwargs):
-        serializer = MyTokenObtainPairSerializer(data=request.data)
+        serializer = TokenSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data['user']
             return Response(
