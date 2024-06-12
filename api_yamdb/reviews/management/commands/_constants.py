@@ -16,7 +16,7 @@ COMMENT_SETTINGS = {
     'model': models.Comment,
     'is_many_to_many': False,
     'foreign_keys': {
-        'rewiew': models.Review,
+        'review_id': models.Review,
         'author': models.User
     }
 }

@@ -92,7 +92,7 @@ class Migration(migrations.Migration):
                 ('text', models.TextField()),
                 ('score', models.IntegerField(default=5, validators=[django.core.validators.MaxValueValidator(10), django.core.validators.MinValueValidator(1)])),
                 ('pub_date', models.DateTimeField(auto_now_add=True, verbose_name='Дата публикации отзыва')),
-                ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='rewiews', to=settings.AUTH_USER_MODEL)),
+                ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='reviews', to=settings.AUTH_USER_MODEL)),
                 ('title_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='reviews', to='reviews.title')),
             ],
             options={
