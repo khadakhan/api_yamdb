@@ -30,7 +30,6 @@ class UserSerializer(ModelSerializer):
         model = User
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
-        extra_kwargs = {'password': {'write_only': True}}
 
     def validate_username(self, value):
         if value.lower() == 'me':
@@ -41,6 +40,7 @@ class UserSerializer(ModelSerializer):
     def create(self, validated_data):
         user, created = User.objects.get_or_create(**validated_data)
         request = self.context.get('request')
+
         if request and request.user.is_authenticated:
             return user
         code = f'{random.randint(100000, 999999):06}'
