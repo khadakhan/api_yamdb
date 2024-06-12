@@ -31,16 +31,17 @@ class UserSerializer(ModelSerializer):
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
 
-    def validate_username(self, value):
-        if value.lower() == 'me':
+    def validate(self, data):
+        username = data.get('username')
+        email = data.get('email')
+        if username.lower() == 'me':
             raise serializers.ValidationError(
                 "Имя пользователя 'me' недоступно")
-        return value
+        return data
 
     def create(self, validated_data):
         user, created = User.objects.get_or_create(**validated_data)
         request = self.context.get('request')
-
         if request and request.user.is_authenticated:
             return user
         code = f'{random.randint(100000, 999999):06}'
@@ -59,9 +60,9 @@ class MyTokenObtainPairSerializer(serializers.Serializer):
     username = serializers.CharField()
     confirmation_code = serializers.CharField()
 
-    def validate(self, attrs):
-        username = attrs.get('username')
-        confirmation_code = attrs.get('confirmation_code')
+    def validate(self, data):
+        username = data.get('username')
+        confirmation_code = data.get('confirmation_code')
         if not username or not confirmation_code:
             raise ValidationError(
                 'Username and код подтверждения обязательны.')
@@ -70,7 +71,7 @@ class MyTokenObtainPairSerializer(serializers.Serializer):
         if not user:
             raise ValidationError(
                 'Неправильный username или код подтверждения.')
-        return attrs
+        return data
 
 
 class ReviewSerializer(ModelSerializer):
