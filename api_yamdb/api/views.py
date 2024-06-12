@@ -1,7 +1,9 @@
+import random
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework_simplejwt.tokens import RefreshToken
 from django_filters.rest_framework import DjangoFilterBackend
+from django.core.mail import send_mail
 from reviews.models import Category, Genre, Review, Title
 from rest_framework import filters, mixins, viewsets
 from rest_framework.decorators import action, throttle_classes
@@ -40,29 +42,30 @@ class UserViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated])
     def me(self, request):
         if request.method == 'GET':
-            serializer = self.get_serializer(data=request.user)
-            return Response(serializer.data)
+            self.kwargs['pk'] = request.user.pk
+            return self.retrieve(request)
 
         elif request.method == 'PATCH':
-            serializer = self.get_serializer(
-                request.user, data=request.data, partial=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data)
+            return self.partial_update(request)
 
 
 class AuthViewSet(ViewSet):
     permission_classes = [AllowAny]
 
-    def get_serializer_context(self):
-        return {'request': self.request}
-
     @action(detail=False, methods=['post'])
     def signup(self, request):
-        serializer = UserSerializer(
-            data=request.data, context=self.get_serializer_context())
+        serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
+            code = f'{random.randint(100000, 999999):06}'
+            user.confirmation_code = code
+            user.save()
+            send_mail(
+                'Код подтверждения',
+                f'Ваш код подтверждения - {code}',
+                'from@example.com',
+                [user.email],
+                fail_silently=False)
             return Response(
                 data={'username': user.username, 'email': user.email},
                 status=HTTP_200_OK)
