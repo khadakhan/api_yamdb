@@ -30,7 +30,7 @@ User = get_user_model()
 
 
 def send_code(user):
-    user.confirmation_code = f'{random.randint(100000, 999999):06}'
+    user.confirmation_code = f'{random.randint(0, 999999):06}'
     user.save()
     send_mail(
         subject='Код подтверждения',
