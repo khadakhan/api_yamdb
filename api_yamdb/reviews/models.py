@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
+from rest_framework.validators import UniqueTogetherValidator
 from django.db import models
 
 SCORES = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
@@ -139,6 +140,13 @@ class Review(models.Model):
     class Meta:
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title_id', 'author'],
+                name='unique_title_author'
+            )
+        ]
 
 
 class Comment(models.Model):
