@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from rest_framework_simplejwt.tokens import RefreshToken
 from django_filters.rest_framework import DjangoFilterBackend
 from reviews.models import Category, Genre, Review, Title
 from rest_framework import filters, mixins, viewsets
@@ -23,7 +24,6 @@ from .serializers import (
     TitleSerializer,
     UserSerializer)
 
-
 User = get_user_model()
 
 
@@ -40,7 +40,7 @@ class UserViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated])
     def me(self, request):
         if request.method == 'GET':
-            serializer = self.get_serializer(request.user)
+            serializer = self.get_serializer(data=request.user)
             return Response(serializer.data)
 
         elif request.method == 'PATCH':
@@ -59,7 +59,7 @@ class AuthViewSet(ViewSet):
 
     @action(detail=False, methods=['post'])
     def signup(self, request):
-        serializer = UserSerializer(data=request.data)
+        serializer = UserSerializer(data=request.data, context=self.get_serializer_context())
         if serializer.is_valid():
             user = serializer.save()
             return Response(
@@ -115,10 +115,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class BaseCreateListDestroyViewSet(
-        mixins.CreateModelMixin,
-        mixins.ListModelMixin,
-        mixins.DestroyModelMixin,
-        viewsets.GenericViewSet):
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet):
     """Base class to provide create, list, destroy acts."""
 
 

@@ -7,9 +7,9 @@ SCORES = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 
 class User(AbstractUser):
     ROLE_CHOICES = (
-        ('admin', 'Administrator'),
-        ('moderator', 'Moderator'),
         ('user', 'User'),
+        ('moderator', 'Moderator'),
+        ('admin', 'Administrator'),
     )
     email = models.EmailField(unique=True)
     confirmation_code = models.CharField(
@@ -36,6 +36,14 @@ class User(AbstractUser):
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+
+    @property
+    def is_moderator(self):
+        return self.role == 'moderator'
+
+    @property
+    def is_admin(self):
+        return self.role == 'admin'
 
     def __str__(self):
         return self.email
@@ -119,7 +127,6 @@ class Review(models.Model):
         default=5,
         validators=[MaxValueValidator(10), MinValueValidator(1)]
     )
-
 
     pub_date = models.DateTimeField(
         'Дата публикации отзыва',
