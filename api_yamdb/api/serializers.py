@@ -15,15 +15,28 @@ from rest_framework.validators import UniqueTogetherValidator
 User = get_user_model()
 
 
-class BaseConnectorToSlug:
-    """Provide method to change incoming data while serialize."""
+class ConnectorToSlug(serializers.RelatedField):
+    """Provide methods to change incoming data while serialize."""
+
+    def __init__(self, *args, base_serializer, **kwargs):
+        self.base_serializer = base_serializer
+        super().__init__(*args, **kwargs)
+
+    def get_model(self):
+        return self.base_serializer.Meta.model
 
     def to_internal_value(self, slug):
         try:
-            object_with_slug = self.Meta.model.objects.get(slug=slug)
+            object_with_slug = self.get_model().objects.get(slug=slug)
         except ObjectDoesNotExist:
             raise serializers.ValidationError(f'Incorrect slug {slug}')
         return object_with_slug
+
+    def get_queryset(self):
+        return self.get_model.object.all()
+
+    def to_representation(self, instance):
+        return self.base_serializer(instance).data
 
 
 class UserSerializer(ModelSerializer):
@@ -127,20 +140,12 @@ class GenreSerializer(ModelSerializer):
         model = Genre
 
 
-class GenreAnotherSerializer(BaseConnectorToSlug, GenreSerializer):
-    """Change input value Genre model while serialize."""
-
-
-class CategoryAnotherSerializer(BaseConnectorToSlug, CategorySerializer):
-    """Change input value Category model while serialize."""
-
-
 class TitleSerializer(serializers.ModelSerializer):
     """Serializer for title viewset."""
 
-    genre = GenreAnotherSerializer(many=True)
+    genre = ConnectorToSlug(base_serializer=GenreSerializer, many=True)
     rating = serializers.SerializerMethodField()
-    category = CategoryAnotherSerializer()
+    category = ConnectorToSlug(base_serializer=CategorySerializer)
 
     class Meta:
         fields = (
@@ -172,6 +177,7 @@ class TitleSerializer(serializers.ModelSerializer):
         title.category = category
         for genre in genres:
             title.genre.add(genre)
+        title.save()
         return title
 
     def update(self, instance, validated_data):
@@ -184,4 +190,5 @@ class TitleSerializer(serializers.ModelSerializer):
             instance.genre.clear()
             for genre in validated_data['genre']:
                 instance.genre.add(genre)
+        instance.save()
         return instance
