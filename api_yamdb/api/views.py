@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import (AllowAny, IsAdminUser, IsAuthenticated)
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import (
     HTTP_200_OK,
@@ -16,13 +16,11 @@ from rest_framework.status import (
 from rest_framework.viewsets import ViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from reviews.models import Category, Genre, Review, Title
+from reviews.models import Category, Genre, Title
 from .filters import TitleFilter
 from .permissions import (IsAdmin,
                           ReadOnly,
-                          AuthorModeratorAdminOrReadOnly
-                          )
-from .throttling import TwoRequestsPerUserThrottle
+                          AuthorModeratorAdminOrReadOnly)
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
