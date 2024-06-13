@@ -50,13 +50,9 @@ class TokenSerializer(serializers.Serializer):
     confirmation_code = serializers.CharField()
 
     def validate(self, data):
-        username = data.get('username')
-        confirmation_code = data.get('confirmation_code')
-        if not username or not confirmation_code:
-            raise ValidationError(
-                'Имя пользователя и код подтверждения обязательны.')
         user = User.objects.filter(
-            username=username, confirmation_code=confirmation_code).first()
+            username=data.get('username'),
+            confirmation_code=data.get('confirmation_code')).first()
         if user is None:
             raise ValidationError('Неправильный код или имя пользователя.')
         data['user'] = user
