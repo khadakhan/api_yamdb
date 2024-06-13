@@ -151,7 +151,7 @@ class Review(models.Model):
 
 class Comment(models.Model):
     """Comment model."""
-    review_id = models.ForeignKey(
+    review = models.ForeignKey(
         Review,
         # При удалении объекта отзыва Review должны быть удалены
         # все комментарии к этому отзыву.
