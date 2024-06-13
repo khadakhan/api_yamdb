@@ -22,6 +22,8 @@ class AuthorModeratorAdminOrReadOnly(permissions.BasePermission):
             return True
         elif request.user.is_moderator or request.user.is_admin:
             return True
+        elif request.user.is_superuser:
+            return True
 
 
 class IsAdmin(permissions.BasePermission):
