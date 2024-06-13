@@ -50,18 +50,18 @@ GET - Получение списка всех отзывов \
 **http://localhost:63342/api/v1/titles/{title_id}/reviews/**
 ```
 {
-"count": 0,
-"next": "string",
-"previous": "string",
-"results": [
-    {
-      "id": 0,
-      "text": "string",
-      "author": "string",
-      "score": 1,
-      "pub_date": "2019-08-24T14:15:22Z"
-    }
-  ]
+    "count": 0,
+    "next": "string",
+    "previous": "string",
+    "results": [
+        {
+          "id": 0,
+          "text": "string",
+          "author": "string",
+          "score": 1,
+          "pub_date": "2019-08-24T14:15:22Z"
+        }
+    ]
 }
 ```
 PATCH - Изменение данных своей учетной записи \
