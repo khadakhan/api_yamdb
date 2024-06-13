@@ -87,9 +87,7 @@ class AuthViewSet(ViewSet):
             return Response(
                 data={'username': user.username, 'email': user.email},
                 status=HTTP_200_OK)
-        return Response(
-            data=serializer.errors,
-            status=HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
     def token(self, request, *args, **kwargs):
@@ -102,7 +100,7 @@ class AuthViewSet(ViewSet):
         username = request.data.get('username')
         if username and not User.objects.filter(username=username).exists():
             return Response(status=HTTP_404_NOT_FOUND)
-        return Response(data=serializer.errors, status=HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, HTTP_400_BAD_REQUEST)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
