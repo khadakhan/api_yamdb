@@ -1,16 +1,15 @@
-import random
 from datetime import datetime
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
-
-from django.shortcuts import get_object_or_404
 from django.db.models import Avg, IntegerField
 from django.db.models.functions import Cast
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from reviews.models import Category, Comment, Genre, Review, Title, SCORES
 from rest_framework.serializers import ModelSerializer, ValidationError
 from rest_framework.validators import UniqueTogetherValidator
+
+from reviews.models import Category, Comment, Genre, Review, Title, SCORES
 
 User = get_user_model()
 
@@ -163,6 +162,11 @@ class TitleSerializer(serializers.ModelSerializer):
     def get_rating(self, title):
         return title.reviews.all().aggregate(
             rating=Cast(Avg('score'), output_field=IntegerField()))['rating']
+
+    def validate_genre(self, genre):
+        if not genre:
+            raise ValidationError('Title must have genre.')
+        return genre
 
     def validate_year(self, creation_year):
         if creation_year > datetime.now().year:

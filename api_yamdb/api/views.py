@@ -1,20 +1,22 @@
 import random
+
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
-from rest_framework_simplejwt.tokens import RefreshToken
-from django_filters.rest_framework import DjangoFilterBackend
 from django.core.mail import send_mail
-from reviews.models import Category, Genre, Review, Title
+from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, viewsets
 from rest_framework.decorators import action
-from rest_framework.viewsets import ViewSet
-from rest_framework.permissions import (
-    AllowAny, IsAdminUser, IsAuthenticated)
+from rest_framework.permissions import (AllowAny, IsAdminUser, IsAuthenticated)
 from rest_framework.response import Response
 from rest_framework.status import (
-    HTTP_200_OK, HTTP_400_BAD_REQUEST,
-    HTTP_404_NOT_FOUND, HTTP_405_METHOD_NOT_ALLOWED)
+    HTTP_200_OK,
+    HTTP_400_BAD_REQUEST,
+    HTTP_404_NOT_FOUND,
+    HTTP_405_METHOD_NOT_ALLOWED)
+from rest_framework.viewsets import ViewSet
+from rest_framework_simplejwt.tokens import RefreshToken
 
+from reviews.models import Category, Genre, Review, Title
 from .filters import TitleFilter
 from .permissions import (IsAdmin,
                           ReadOnly,
@@ -124,7 +126,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(review=self.get_review(), author=self.request.user)
 
-   
+
 class ReviewViewSet(viewsets.ModelViewSet):
     """Viewset for reviews."""
     serializer_class = ReviewSerializer
@@ -142,10 +144,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class BaseCreateListDestroyViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet):
+        mixins.CreateModelMixin,
+        mixins.ListModelMixin,
+        mixins.DestroyModelMixin,
+        viewsets.GenericViewSet):
     """Base class to provide create, list, destroy acts."""
 
 

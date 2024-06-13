@@ -1,6 +1,5 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
-from rest_framework.validators import UniqueTogetherValidator
 from django.db import models
 
 SCORES = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
