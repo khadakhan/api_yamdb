@@ -16,9 +16,11 @@ from rest_framework.status import (
     HTTP_404_NOT_FOUND, HTTP_405_METHOD_NOT_ALLOWED)
 
 from .filters import TitleFilter
-from .permissions import IsAdmin, ReadOnly, AuthorOrReadOnly
+from .permissions import (IsAdmin,
+                          ReadOnly,
+                          AuthorModeratorAdminOrReadOnly
+                          )
 from .throttling import TwoRequestsPerUserThrottle
-from .permissions import AuthorOrReadOnly
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
@@ -106,7 +108,7 @@ class AuthViewSet(ViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     """Viewset for comments."""
     serializer_class = CommentSerializer
-    permission_classes = (AuthorOrReadOnly,)
+    permission_classes = (AuthorModeratorAdminOrReadOnly,)
 
     def get_title(self):
         return get_object_or_404(Title, id=self.kwargs.get('title_id'))
@@ -125,7 +127,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     """Viewset for reviews."""
     serializer_class = ReviewSerializer
-    permission_classes = (AuthorOrReadOnly,)
+    permission_classes = (AuthorModeratorAdminOrReadOnly,)
 
     def get_title(self):
         return get_object_or_404(Title, id=self.kwargs.get('title_id'))
