@@ -11,6 +11,7 @@ class Command(BaseCommand):
         settings = NAME_TO_SETTINGS[options['model'][0]]
         model = settings['model']
         foreign_keys = settings['foreign_keys']
+        redirect = settings['redirect']
         is_many_to_many = settings['is_many_to_many']
         files = options['files']
         row_parser = standart_row_parse
@@ -18,7 +19,7 @@ class Command(BaseCommand):
             row_parser = many_to_many_row_parse
 
         for file in files:
-            csv_parse(file, row_parser, foreign_keys, model)
+            csv_parse(file, row_parser, redirect, foreign_keys, model)
 
     def add_arguments(self, parser):
         parser.add_argument(
