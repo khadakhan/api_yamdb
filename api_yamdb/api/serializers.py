@@ -63,14 +63,6 @@ class TokenSerializer(serializers.Serializer):
         return data
 
 
-class TitleIdDefault:
-    """Class for extracting title_id."""
-    requires_context = True
-
-    def __call__(self, serializer_field):
-        return serializer_field.context['request'].data.get('title_id')
-
-
 class ReviewSerializer(ModelSerializer):
     """Review serializer."""
     author = serializers.SlugRelatedField(
@@ -79,7 +71,16 @@ class ReviewSerializer(ModelSerializer):
         read_only=True
     )
     score = serializers.ChoiceField(choices=SCORES)
-    title_id = serializers.HiddenField(default=TitleIdDefault())
+    title_id = serializers.HiddenField(
+        default=serializers.PrimaryKeyRelatedField(
+            queryset=Title.objects.all(),
+        )
+    )
+
+    def validate_title_id(self, value):
+        # Кто бы мог подумать???
+        title_id = self.context['view'].kwargs['title_id']
+        return get_object_or_404(Title, pk=title_id)
 
     class Meta:
         fields = ('text',
@@ -93,8 +94,8 @@ class ReviewSerializer(ModelSerializer):
             UniqueTogetherValidator(
                 queryset=Review.objects.all(),
                 fields=('title_id', 'author'),
-                message=("Пользователь может лишь один раз оставить отзыв"
-                         "к произведению!")
+                message=("Пользователь может оставить только один отзыв"
+                         " к произведению!")
             )
         ]
 
