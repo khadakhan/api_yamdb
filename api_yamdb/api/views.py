@@ -109,6 +109,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     """Viewset for comments."""
     serializer_class = CommentSerializer
     permission_classes = (AuthorModeratorAdminOrReadOnly,)
+    http_method_names = ('get', 'post', 'patch', 'delete')
 
     def get_title(self):
         return get_object_or_404(Title, id=self.kwargs.get('title_id'))
@@ -123,11 +124,12 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(review_id=self.get_review(), author=self.request.user)
 
-
+   
 class ReviewViewSet(viewsets.ModelViewSet):
     """Viewset for reviews."""
     serializer_class = ReviewSerializer
     permission_classes = (AuthorModeratorAdminOrReadOnly,)
+    http_method_names = ('get', 'post', 'patch', 'delete')
 
     def get_title(self):
         return get_object_or_404(Title, id=self.kwargs.get('title_id'))
@@ -136,7 +138,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return self.get_title().reviews.all()
 
     def perform_create(self, serializer):
-        serializer.save(title_id=self.get_title(), author=self.request.user)
+        serializer.save(title=self.get_title(), author=self.request.user)
 
 
 class BaseCreateListDestroyViewSet(

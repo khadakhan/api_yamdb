@@ -111,7 +111,7 @@ class Title(models.Model):
 
 class Review(models.Model):
     """Review model."""
-    title_id = models.ForeignKey(
+    title = models.ForeignKey(
         Title,
         # При удалении объекта произведения Title должны удаляться все
         # отзывы к этому произведению и комментарии к ним.
@@ -143,7 +143,7 @@ class Review(models.Model):
 
         constraints = [
             models.UniqueConstraint(
-                fields=['title_id', 'author'],
+                fields=['title', 'author'],
                 name='unique_title_author'
             )
         ]
