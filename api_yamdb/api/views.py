@@ -18,7 +18,7 @@ from rest_framework.status import (
 from rest_framework.viewsets import ViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from reviews.models import Category, Genre, Title
+from reviews.models import Category, Genre, Review, Title
 from .filters import TitleFilter
 from .permissions import (IsAdmin,
                           ReadOnly,
@@ -116,12 +116,9 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = (AuthorModeratorAdminOrReadOnly,)
     http_method_names = ('get', 'post', 'patch', 'delete')
 
-    def get_title(self):
-        return get_object_or_404(Title, id=self.kwargs.get('title_id'))
-
     def get_review(self):
-        return get_object_or_404(self.get_title().reviews.all(),
-                                 id=self.kwargs.get('review_id'))
+        return get_object_or_404(Review, id=self.kwargs.get(
+            'review_id'), title=self.kwargs.get('title_id'))
 
     def get_queryset(self):
         return self.get_review().comments.all()
