@@ -155,8 +155,15 @@ class Review(models.Model):
         verbose_name='Автор отзыва'
     )
     score = models.IntegerField(
-        default=5,
-        validators=[MaxValueValidator(10), MinValueValidator(1)],
+        # default=5,
+        validators=[MaxValueValidator(
+            10,
+            message='Оценка должна быть не более 10'
+        ), MinValueValidator(
+            1,
+            message='Оценка должна быть не менее 1'
+        )
+        ],
         verbose_name='Оценка произведения'
     )
 
