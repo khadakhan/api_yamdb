@@ -1,10 +1,11 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import UnicodeUsernameValidator
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer, ValidationError
-from rest_framework.validators import UniqueTogetherValidator
 
+from reviews.validators import validate_username_me
 from reviews.models import Category, Comment, Genre, Review, Title
 
 User = get_user_model()
@@ -26,8 +27,8 @@ class UserSerializer(ModelSerializer):
 class TokenSerializer(serializers.Serializer):
     """Token serializer."""
     username = serializers.CharField(
-        max_length=settings.MAX_NAME_LENGTH,
-        validators=[User.validate_username])
+        max_length=settings.MAX_NAME_LENGTH, validators=(
+            validate_username_me, UnicodeUsernameValidator))
     confirmation_code = serializers.CharField()
 
     def validate(self, data):

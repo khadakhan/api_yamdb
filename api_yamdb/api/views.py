@@ -3,8 +3,7 @@ import random
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
-from django.db.models import Avg, IntegerField
-from django.db.models.query import Cast
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, viewsets
@@ -84,7 +83,9 @@ class AuthViewSet(ViewSet):
         if existing_user and existing_user.username == username:
             generate_and_send_code(existing_user)
             return Response(
-                data={'message': 'Новый код отправлен на почту'},
+                data={
+                    'username': existing_user.username,
+                    'email': existing_user.email},
                 status=HTTP_200_OK)
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
