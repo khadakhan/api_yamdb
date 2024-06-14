@@ -122,11 +122,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
         serializer.save(title=self.get_title(), author=self.request.user)
 
 
-class BaseCreateListDestroyViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet):
+class BaseCreateListDestroyViewSet(mixins.CreateModelMixin,
+                                   mixins.ListModelMixin,
+                                   mixins.DestroyModelMixin,
+                                   viewsets.GenericViewSet):
     """Base class to provide create, list, destroy acts."""
 
     permission_classes = (IsAdmin | ReadOnly,)
