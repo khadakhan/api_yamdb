@@ -4,10 +4,8 @@ from django.conf import settings
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'p&l%385148kslhtyn^##a1)ilz@4zqj=rq&agdol^##zgl9(vs'
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = [
@@ -15,7 +13,6 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
 ]
 
-# Application definition
 
 INSTALLED_APPS = [
     'rest_framework',
@@ -63,16 +60,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'api_yamdb.wsgi.application'
 
-# Database
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
-# Password validation
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -107,8 +100,6 @@ SIMPLE_JWT = {
     'TOKEN_TYPE_CLAIM': 'token_type',
 }
 
-# Internationalization
-
 LANGUAGE_CODE = 'ru-RU'
 
 TIME_ZONE = 'UTC'
@@ -118,8 +109,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
-# Static files (CSS, JavaScript, Images)
 
 STATIC_URL = '/static/'
 
@@ -135,3 +124,4 @@ REST_FRAMEWORK = {
 
 MAX_NAME_LENGTH = 150
 MAX_TITLE_LENGTH = 256
+FROM_EMAIL = 'from@example.com'

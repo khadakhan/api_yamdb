@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Avg, IntegerField
@@ -52,7 +53,9 @@ class UserSerializer(ModelSerializer):
 
 class TokenSerializer(serializers.Serializer):
     """Token serializer."""
-    username = serializers.CharField()
+    username = serializers.CharField(
+        max_length=settings.MAX_NAME_LENGTH,
+        validators=[User.validate_username])
     confirmation_code = serializers.CharField()
 
     def validate(self, data):
