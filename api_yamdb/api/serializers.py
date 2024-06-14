@@ -78,13 +78,6 @@ class ReviewSerializer(ModelSerializer):
         slug_field='username',
         read_only=True
     )
-    score = serializers.ChoiceField(choices=SCORES)
-    title = serializers.HiddenField(
-        default='0'
-        # default=serializers.PrimaryKeyRelatedField(
-        #     queryset=Title.objects.all(),
-        # )
-    )
 
     def validate(self, data):
         title_id = self.context['view'].kwargs['title_id']
@@ -99,27 +92,13 @@ class ReviewSerializer(ModelSerializer):
 
         return data
 
-    # def validate_title(self, value):
-    #     title = self.context['view'].kwargs['title_id']
-    #     return get_object_or_404(Title, pk=title)
-
     class Meta:
         fields = ('text',
                   'id',
-                  'title',
                   'author',
                   'score',
                   'pub_date')
         model = Review
-        # На одно произведение пользователь может оставить только один отзыв.
-        # validators = [
-        #     UniqueTogetherValidator(
-        #         queryset=Review.objects.all(),
-        #         fields=('title', 'author'),
-        #         message=("Пользователь может оставить только один отзыв"
-        #                  " к произведению!")
-        #     )
-        # ]
 
 
 class CommentSerializer(ModelSerializer):
