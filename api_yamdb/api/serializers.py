@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import UnicodeUsernameValidator
+from django.contrib.auth.tokens import default_token_generator
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer, ValidationError
@@ -37,7 +38,7 @@ class TokenSerializer(serializers.Serializer):
             confirmation_code=data.get('confirmation_code')).first()
         if user is None:
             raise ValidationError('Неправильный код или имя пользователя.')
-        data['user'] = user
+        # data['user'] = user
         return data
 
 
@@ -57,8 +58,7 @@ class ReviewSerializer(ModelSerializer):
                 title.reviews.filter(author=curr_author).exists()):
             raise serializers.ValidationError(
                 "Пользователь может оставить только один отзыв"
-                " к произведению!"
-            )
+                " к произведению!")
         return data
 
     class Meta:

@@ -2,11 +2,12 @@ import random
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, mixins, viewsets
+from rest_framework import filters, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -16,13 +17,12 @@ from rest_framework.status import (
     HTTP_404_NOT_FOUND,
     HTTP_405_METHOD_NOT_ALLOWED)
 from rest_framework.viewsets import ViewSet
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import AccessToken
 
 from reviews.models import Category, Genre, Review, Title
 from .filters import TitleFilter
-from .permissions import (IsAdmin,
-                          ReadOnly,
-                          AuthorModeratorAdminOrReadOnly)
+from .permissions import (
+    IsAdmin, ReadOnly, AuthorModeratorAdminOrReadOnly)
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
@@ -32,16 +32,16 @@ from .serializers import (
     TokenSerializer,
     ReviewSerializer,
     UserSerializer)
+from .viewsets import BaseCreateListDestroyViewSet
 
 User = get_user_model()
 
 
 def generate_and_send_code(user):
-    user.confirmation_code = f'{random.randint(0, 999999):06}'
-    user.save()
+    token = default_token_generator.make_token(user)
     send_mail(
         subject='Код подтверждения',
-        message=f'Ваш код подтверждения - {user.confirmation_code}',
+        message=f'Ваш код подтверждения - {token}',
         from_email=settings.FROM_EMAIL,
         recipient_list=[user.email],
         fail_silently=False)
@@ -52,21 +52,16 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     http_method_names = ('get', 'post', 'patch', 'delete')
+    allowed_methods = ('get', 'post', 'patch',)
+    permission_classes = (IsAdmin,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('username',)
     lookup_field = 'username'
 
-    def get_permissions(self):
-        if self.action == 'me':
-            return [IsAuthenticated()]
-        return [IsAdmin()]
-
-    @action(detail=False, methods=['get', 'patch', 'delete'],
+    @action(detail=False, methods=['get', 'patch'],
             permission_classes=[IsAuthenticated])
     def me(self, request):
         self.kwargs['username'] = request.user.username
-        if request.method == 'DELETE':
-            return Response(status=HTTP_405_METHOD_NOT_ALLOWED)
         if request.method == 'GET':
             return self.retrieve(request)
         return self.partial_update(request)
@@ -78,36 +73,26 @@ class AuthViewSet(ViewSet):
     @action(detail=False, methods=['post'])
     def signup(self, request):
         username = request.data.get('username')
-        existing_user = User.objects.filter(
+        user = User.objects.filter(
             email=request.data.get('email')).first()
-        if existing_user and existing_user.username == username:
-            generate_and_send_code(existing_user)
-            return Response(
-                data={
-                    'username': existing_user.username,
-                    'email': existing_user.email},
-                status=HTTP_200_OK)
-        serializer = UserSerializer(data=request.data)
-        if serializer.is_valid():
+        if not user or user.username != username:
+            serializer = UserSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
             user = serializer.save()
-            generate_and_send_code(user)
-            return Response(
-                data={'username': user.username, 'email': user.email},
-                status=HTTP_200_OK)
-        return Response(serializer.errors, HTTP_400_BAD_REQUEST)
+        generate_and_send_code(user)
+        return Response(
+            data={'username': user.username, 'email': user.email},
+            status=HTTP_200_OK)
 
     @action(detail=False, methods=['post'])
     def token(self, request, *args, **kwargs):
         serializer = TokenSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-            return Response(
-                data={'token': str(RefreshToken.for_user(user).access_token)},
-                status=HTTP_200_OK)
-        username = request.data.get('username')
-        if username and not User.objects.filter(username=username).exists():
-            return Response(status=HTTP_404_NOT_FOUND)
-        return Response(serializer.errors, HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        user = get_object_or_404(
+            User, username=serializer.data.get('username'))
+        return Response(
+            data={'token': str(AccessToken.for_user(user))},
+            status=HTTP_200_OK)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -143,14 +128,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         serializer.save(title=self.get_title(), author=self.request.user)
 
 
-class BaseCreateListDestroyViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet):
-    """Base class to provide create, list, destroy acts."""
 
-    permission_classes = (IsAdmin | ReadOnly,)
 
 
 class CategoryViewSet(BaseCreateListDestroyViewSet):
