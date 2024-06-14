@@ -20,6 +20,23 @@ class UserSerializer(ModelSerializer):
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
 
+    def create(self, data):
+        email_user = User.objects.filter(
+            email=data.get('email')).first()
+        username_user = User.objects.filter(
+            username=data.get('username')).first()
+        if email_user != username_user:
+            error_msg = {}
+            if not email_user:
+                error_msg['username'] = ('Пользователь с таким '
+                                         'username уже существует.')
+            if not username_user:
+                error_msg['email'] = ('Пользователь с таким '
+                                      'email уже существует.')
+            raise ValidationError(error_msg)
+        user, _ = User.objects.get_or_create(**data)
+        return user
+
     def update(self, instance, validated_data):
         validated_data.pop('role', None)
         return super().update(instance, validated_data)
@@ -33,12 +50,12 @@ class TokenSerializer(serializers.Serializer):
     confirmation_code = serializers.CharField()
 
     def validate(self, data):
-        user = User.objects.filter(
-            username=data.get('username'),
-            confirmation_code=data.get('confirmation_code')).first()
-        if user is None:
-            raise ValidationError('Неправильный код или имя пользователя.')
-        # data['user'] = user
+        user = get_object_or_404(
+            User, username=data.get('username'))
+        if not default_token_generator.check_token(
+                user, data.get('confirmation_code')):
+            raise ValidationError(
+                'Неправильный код или имя пользователя.')
         return data
 
 
@@ -56,9 +73,9 @@ class ReviewSerializer(ModelSerializer):
         curr_author = self.context['request'].user
         if (not self.context['request'].method == 'PATCH') and (
                 title.reviews.filter(author=curr_author).exists()):
-            raise serializers.ValidationError(
-                "Пользователь может оставить только один отзыв"
-                " к произведению!")
+            raise ValidationError(
+                'Пользователь может оставить только один отзыв'
+                ' к произведению!')
         return data
 
     class Meta:
@@ -102,7 +119,7 @@ class GenreSerializer(ModelSerializer):
         model = Genre
 
 
-class TitleReadSerializer(serializers.ModelSerializer):
+class TitleReadSerializer(ModelSerializer):
     """Serializer for read title viewset."""
 
     genre = GenreSerializer(many=True)
@@ -121,7 +138,7 @@ class TitleReadSerializer(serializers.ModelSerializer):
         model = Title
 
 
-class TitleWriteSerializer(serializers.ModelSerializer):
+class TitleWriteSerializer(ModelSerializer):
     """Serializer for write to title viewset."""
 
     genre = serializers.SlugRelatedField(

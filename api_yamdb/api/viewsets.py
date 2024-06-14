@@ -7,7 +7,7 @@ from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, viewsets
+from rest_framework import filters, mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -21,8 +21,9 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from reviews.models import Category, Genre, Review, Title
 from .filters import TitleFilter
-from .permissions import (
-    IsAdmin, ReadOnly, AuthorModeratorAdminOrReadOnly)
+from .permissions import (IsAdmin,
+                          ReadOnly,
+                          AuthorModeratorAdminOrReadOnly)
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
@@ -32,7 +33,6 @@ from .serializers import (
     TokenSerializer,
     ReviewSerializer,
     UserSerializer)
-from .viewsets import BaseCreateListDestroyViewSet
 
 User = get_user_model()
 
@@ -128,7 +128,17 @@ class ReviewViewSet(viewsets.ModelViewSet):
         serializer.save(title=self.get_title(), author=self.request.user)
 
 
+class BaseCreateListDestroyViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet):
+    """Base class to provide create, list, destroy acts."""
 
+    permission_classes = (IsAdmin | ReadOnly,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    lookup_field = 'slug'
 
 
 class CategoryViewSet(BaseCreateListDestroyViewSet):
@@ -136,9 +146,6 @@ class CategoryViewSet(BaseCreateListDestroyViewSet):
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
-    lookup_field = 'slug'
 
 
 class GenreViewSet(BaseCreateListDestroyViewSet):
@@ -146,9 +153,6 @@ class GenreViewSet(BaseCreateListDestroyViewSet):
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
-    lookup_field = 'slug'
 
 
 class TitleViewSet(viewsets.ModelViewSet):

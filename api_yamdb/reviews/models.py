@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
@@ -16,10 +15,6 @@ class UserRole(models.TextChoices):
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
-    confirmation_code = models.CharField(
-        max_length=6,
-        default=0,
-        blank=True)
     first_name = models.CharField(
         max_length=settings.MAX_NAME_LENGTH,
         blank=True)
@@ -103,8 +98,8 @@ class Title(models.Model):
         max_length=settings.MAX_CHAR_NAME,
         verbose_name='Название произведения')
     year = models.SmallIntegerField(
-        verbose_name='Год создания произведения', validators=(
-            lte_current_year_validator,))
+        verbose_name='Год создания произведения',
+        validators=(lte_current_year_validator,))
     description = models.TextField(
         default='',
         blank=True,
@@ -148,10 +143,10 @@ class Review(models.Model):
     score = models.IntegerField(
         # default=5,
         validators=[MaxValueValidator(
-            10,
+            limit_value=10,
             message='Оценка должна быть не более 10'
         ), MinValueValidator(
-            1,
+            limit_value=1,
             message='Оценка должна быть не менее 1'
         )
         ],
@@ -179,19 +174,18 @@ class Comment(models.Model):
     """Comment model."""
     review = models.ForeignKey(
         Review,
-        # При удалении объекта отзыва Review должны быть удалены
-        # все комментарии к этому отзыву.
         on_delete=models.CASCADE,
         related_name='comments',
         verbose_name='Идентификатор отзыва'
     )
     text = models.TextField()
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='comments',
+        User, on_delete=models.CASCADE,
+        related_name='comments',
         verbose_name='Автор комментария'
     )
     pub_date = models.DateTimeField(
-        'Дата публикации комментария',
+        verbose_name='Дата публикации комментария',
         auto_now_add=True,
     )
 
