@@ -3,6 +3,8 @@ import random
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
+from django.db.models import Avg, IntegerField
+from django.db.models.query import Cast
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, viewsets
@@ -26,9 +28,10 @@ from .serializers import (
     CategorySerializer,
     CommentSerializer,
     GenreSerializer,
+    TitleReadSerializer,
+    TitleWriteSerializer,
     TokenSerializer,
     ReviewSerializer,
-    TitleSerializer,
     UserSerializer)
 
 User = get_user_model()
@@ -149,12 +152,13 @@ class BaseCreateListDestroyViewSet(
         viewsets.GenericViewSet):
     """Base class to provide create, list, destroy acts."""
 
+    permission_classes = (IsAdmin | ReadOnly,)
+
 
 class CategoryViewSet(BaseCreateListDestroyViewSet):
     """ViewSet for category."""
 
     queryset = Category.objects.all()
-    permission_classes = (IsAdmin | ReadOnly,)
     serializer_class = CategorySerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
@@ -165,7 +169,6 @@ class GenreViewSet(BaseCreateListDestroyViewSet):
     """ViewSet for genre."""
 
     queryset = Genre.objects.all()
-    permission_classes = (IsAdmin | ReadOnly,)
     serializer_class = GenreSerializer
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
@@ -175,10 +178,13 @@ class GenreViewSet(BaseCreateListDestroyViewSet):
 class TitleViewSet(viewsets.ModelViewSet):
     """ViewSet for title."""
 
-    queryset = Title.objects.prefetch_related(
-        'genre').select_related('category')
-    permission_classes = (IsAdmin | ReadOnly,)
+    queryset = Title.objects.prefetch_related('genre').select_related(
+        'category').annotate(rating=Avg('reviews__score'))
     http_method_names = ('get', 'post', 'patch', 'delete')
-    serializer_class = TitleSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return TitleReadSerializer
+        return TitleWriteSerializer

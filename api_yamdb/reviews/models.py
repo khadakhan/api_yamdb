@@ -1,14 +1,11 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
-from django.core.exceptions import ValidationError
 from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-SCORES = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-
-
-
+from .validators import lte_current_year_validator, validate_username
 
 
 class UserRole(models.TextChoices):
@@ -75,9 +72,11 @@ class User(AbstractUser):
 
 class Category(models.Model):
     """Model of category."""
-    name = models.CharField(max_length=256, verbose_name='Название категории')
+    name = models.CharField(
+        max_length=settings.MAX_CHAR_NAME,
+        verbose_name='Название категории')
     slug = models.SlugField(
-        max_length=50,
+        max_length=settings.MAX_CHAR_SLUG,
         unique=True,
         verbose_name='Уникальное имя категории')
 
@@ -91,9 +90,11 @@ class Category(models.Model):
 
 class Genre(models.Model):
     """Model of genre."""
-    name = models.CharField(max_length=256, verbose_name='Название жанра')
+    name = models.CharField(
+        max_length=settings.MAX_CHAR_NAME,
+        verbose_name='Название жанра')
     slug = models.SlugField(
-        max_length=50,
+        max_length=settings.MAX_CHAR_SLUG,
         unique=True,
         verbose_name='Уникальное имя жанра')
 
@@ -110,7 +111,9 @@ class Title(models.Model):
     name = models.CharField(
         max_length=settings.MAX_TITLE_LENGTH,
         verbose_name='Название произведения')
-    year = models.IntegerField(verbose_name='Год создания произведения')
+    year = models.SmallIntegerField(
+        verbose_name='Год создания произведения', validators=(
+            lte_current_year_validator,))
     description = models.TextField(
         default='',
         blank=True,
