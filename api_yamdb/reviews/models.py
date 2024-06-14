@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from .validators import lte_current_year_validator, validate_username
+from .validators import lte_current_year_validator, validate_username_me
 
 
 class UserRole(models.TextChoices):
@@ -15,16 +15,6 @@ class UserRole(models.TextChoices):
 
 
 class User(AbstractUser):
-    def validate_username(value):
-        if value.lower() == 'me':
-            raise ValidationError('Никнейм "me" недопустим.')
-        validator = UnicodeUsernameValidator()
-        try:
-            validator(value)
-        except ValidationError as error:
-            raise ValidationError(
-                f"Никнейм содержит недопустимые символы: {error}")
-
     email = models.EmailField(unique=True)
     confirmation_code = models.CharField(
         max_length=6,
@@ -44,7 +34,9 @@ class User(AbstractUser):
     username = models.CharField(
         max_length=settings.MAX_NAME_LENGTH,
         unique=True,
-        validators=[validate_username],
+        validators=(
+            validate_username_me,
+            UnicodeUsernameValidator()),
         error_messages={
             'unique': "Пользователь с таким ником уже существует.",
         },
