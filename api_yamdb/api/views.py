@@ -27,9 +27,10 @@ from .serializers import (
     CategorySerializer,
     CommentSerializer,
     GenreSerializer,
+    TitleReadSerializer,
+    TitleWriteSerializer,
     TokenSerializer,
     ReviewSerializer,
-    TitleSerializer,
     UserSerializer)
 
 User = get_user_model()
@@ -179,6 +180,10 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.prefetch_related('genre').select_related(
         'category').annotate(rating=Avg('reviews__score'))
     http_method_names = ('get', 'post', 'patch', 'delete')
-    serializer_class = TitleSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return TitleReadSerializer
+        return TitleWriteSerializer

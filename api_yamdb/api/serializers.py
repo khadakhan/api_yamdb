@@ -14,30 +14,6 @@ from reviews.models import Category, Comment, Genre, Review, Title, SCORES
 User = get_user_model()
 
 
-class ConnectorToSlug(serializers.RelatedField):
-    """Provide methods to change incoming data while serialize."""
-
-    def __init__(self, *args, base_serializer, **kwargs):
-        self.base_serializer = base_serializer
-        super().__init__(*args, **kwargs)
-
-    def get_model(self):
-        return self.base_serializer.Meta.model
-
-    def to_internal_value(self, slug):
-        try:
-            object_with_slug = self.get_model().objects.get(slug=slug)
-        except ObjectDoesNotExist:
-            raise serializers.ValidationError(f'Incorrect slug {slug}')
-        return object_with_slug
-
-    def get_queryset(self):
-        return self.get_model.object.all()
-
-    def to_representation(self, instance):
-        return self.base_serializer(instance).data
-
-
 class UserSerializer(ModelSerializer):
     """User serializer."""
     class Meta:
@@ -144,16 +120,9 @@ class GenreSerializer(ModelSerializer):
 class TitleReadSerializer(serializers.ModelSerializer):
     """Serializer for read title viewset."""
 
-    genre = GenreSerializer()
+    genre = GenreSerializer(many=True)
+    rating = serializers.IntegerField(read_only=True, allow_null=True)
     category = CategorySerializer()
-
-
-class TitleSerializer(serializers.ModelSerializer):
-    """Serializer for title viewset."""
-
-    genre = ConnectorToSlug(base_serializer=GenreSerializer, many=True)
-    rating = serializers.IntegerField(read_only=True)
-    category = ConnectorToSlug(base_serializer=CategorySerializer)
 
     class Meta:
         fields = (
@@ -166,32 +135,26 @@ class TitleSerializer(serializers.ModelSerializer):
             'category')
         model = Title
 
-    def validate_genre(self, genre):
-        if not genre:
-            raise ValidationError('Title must have genre.')
-        return genre
 
-    def create(self, validated_data):
-        category = validated_data.pop('category')
-        genres = validated_data.pop('genre')
+class TitleWriteSerializer(serializers.ModelSerializer):
+    """Serializer for write to title viewset."""
 
-        title = Title.objects.create(**validated_data)
+    genre = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Genre.objects.all(),
+        many=True,
+        allow_empty=False)
+    category = serializers.SlugRelatedField(
+        slug_field='slug', queryset=Category.objects.all())
 
-        title.category = category
-        for genre in genres:
-            title.genre.add(genre)
-        title.save()
-        return title
+    class Meta:
+        fields = (
+            'name',
+            'year',
+            'description',
+            'genre',
+            'category')
+        model = Title
 
-    def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.year = validated_data.get('year', instance.year)
-        instance.description = validated_data.get(
-            'description', instance.description)
-        instance.category = validated_data.get('category', instance.category)
-        if 'genre' in validated_data:
-            instance.genre.clear()
-            for genre in validated_data['genre']:
-                instance.genre.add(genre)
-        instance.save()
-        return instance
+    def to_representation(self, title):
+        return TitleReadSerializer(title).data
