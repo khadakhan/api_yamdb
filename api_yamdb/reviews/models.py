@@ -1,32 +1,55 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 SCORES = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 
 
+def validate_username(value):
+    if value.lower() == 'me':
+        raise ValidationError('Никнейм "me" недопустим.')
+    validator = UnicodeUsernameValidator()
+    try:
+        validator(value)
+    except ValidationError as error:
+        raise ValidationError(
+            f"Никнейм содержит недопустимые символы: {error}")
+
+
+class UserRole(models.TextChoices):
+    USER = 'user', 'User'
+    MODERATOR = 'moderator', 'Moderator'
+    ADMIN = 'admin', 'Administrator'
+
+
 class User(AbstractUser):
-    ROLE_CHOICES = (
-        ('user', 'User'),
-        ('moderator', 'Moderator'),
-        ('admin', 'Administrator'),
-    )
     email = models.EmailField(unique=True)
     confirmation_code = models.CharField(
         max_length=6,
         default=0,
         blank=True)
     first_name = models.CharField(
-        max_length=30,
+        max_length=settings.MAX_NAME_LENGTH,
         blank=True)
     last_name = models.CharField(
-        max_length=30,
+        max_length=settings.MAX_NAME_LENGTH,
         blank=True)
     bio = models.TextField(blank=True)
     role = models.CharField(
         max_length=20,
-        choices=ROLE_CHOICES,
-        default='user')
+        choices=UserRole.choices,
+        default=UserRole.USER)
+    username = models.CharField(
+        max_length=settings.MAX_NAME_LENGTH,
+        unique=True,
+        validators=[validate_username],
+        error_messages={
+            'unique': "Пользователь с таким ником уже существует.",
+        },
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
@@ -37,11 +60,11 @@ class User(AbstractUser):
 
     @property
     def is_moderator(self):
-        return self.role == 'moderator'
+        return self.role == UserRole.MODERATOR
 
     @property
     def is_admin(self):
-        return self.role == 'admin' or self.is_superuser
+        return self.role == UserRole.ADMIN or self.is_superuser
 
     def __str__(self):
         return self.email
@@ -82,7 +105,7 @@ class Genre(models.Model):
 class Title(models.Model):
     """Model of title."""
     name = models.CharField(
-        max_length=256,
+        max_length=settings.MAX_TITLE_LENGTH,
         verbose_name='Название произведения')
     year = models.IntegerField(verbose_name='Год создания произведения')
     description = models.TextField(
