@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
@@ -23,7 +24,9 @@ class UserSerializer(ModelSerializer):
 
 class TokenSerializer(serializers.Serializer):
     """Token serializer."""
-    username = serializers.CharField()
+    username = serializers.CharField(
+        max_length=settings.MAX_NAME_LENGTH,
+        validators=[User.validate_username])
     confirmation_code = serializers.CharField()
 
     def validate(self, data):
