@@ -13,6 +13,7 @@ User = get_user_model()
 
 class UserSerializer(ModelSerializer):
     """User serializer."""
+
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name',
