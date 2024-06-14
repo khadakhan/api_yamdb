@@ -45,12 +45,6 @@ class UserSerializer(ModelSerializer):
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
 
-    def validate_username(self, value):
-        if value.lower() == 'me':
-            raise serializers.ValidationError(
-                "Имя пользователя 'me' недоступно")
-        return value
-
     def update(self, instance, validated_data):
         validated_data.pop('role', None)
         return super().update(instance, validated_data)
