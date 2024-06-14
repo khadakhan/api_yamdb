@@ -1,32 +1,41 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-SCORES = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+from .validators import lte_current_year_validator, validate_username_me
+
+
+class UserRole(models.TextChoices):
+    USER = 'user', 'User'
+    MODERATOR = 'moderator', 'Moderator'
+    ADMIN = 'admin', 'Administrator'
 
 
 class User(AbstractUser):
-    ROLE_CHOICES = (
-        ('user', 'User'),
-        ('moderator', 'Moderator'),
-        ('admin', 'Administrator'),
-    )
     email = models.EmailField(unique=True)
-    confirmation_code = models.CharField(
-        max_length=6,
-        default=0,
-        blank=True)
     first_name = models.CharField(
-        max_length=30,
+        max_length=settings.MAX_NAME_LENGTH,
         blank=True)
     last_name = models.CharField(
-        max_length=30,
+        max_length=settings.MAX_NAME_LENGTH,
         blank=True)
     bio = models.TextField(blank=True)
     role = models.CharField(
         max_length=20,
-        choices=ROLE_CHOICES,
-        default='user')
+        choices=UserRole.choices,
+        default=UserRole.USER)
+    username = models.CharField(
+        max_length=settings.MAX_NAME_LENGTH,
+        unique=True,
+        validators=(
+            validate_username_me,
+            UnicodeUsernameValidator()),
+        error_messages={
+            'unique': "Пользователь с таким ником уже существует.",
+        },
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
@@ -37,11 +46,11 @@ class User(AbstractUser):
 
     @property
     def is_moderator(self):
-        return self.role == 'moderator'
+        return self.role == UserRole.MODERATOR
 
     @property
     def is_admin(self):
-        return self.role == 'admin'
+        return self.role == UserRole.ADMIN or self.is_superuser
 
     def __str__(self):
         return self.email
@@ -49,9 +58,11 @@ class User(AbstractUser):
 
 class Category(models.Model):
     """Model of category."""
-    name = models.CharField(max_length=256, verbose_name='Название категории')
+    name = models.CharField(
+        max_length=settings.MAX_CHAR_NAME,
+        verbose_name='Название категории')
     slug = models.SlugField(
-        max_length=50,
+        max_length=settings.MAX_CHAR_SLUG,
         unique=True,
         verbose_name='Уникальное имя категории')
 
@@ -65,9 +76,11 @@ class Category(models.Model):
 
 class Genre(models.Model):
     """Model of genre."""
-    name = models.CharField(max_length=256, verbose_name='Название жанра')
+    name = models.CharField(
+        max_length=settings.MAX_CHAR_NAME,
+        verbose_name='Название жанра')
     slug = models.SlugField(
-        max_length=50,
+        max_length=settings.MAX_CHAR_SLUG,
         unique=True,
         verbose_name='Уникальное имя жанра')
 
@@ -82,9 +95,11 @@ class Genre(models.Model):
 class Title(models.Model):
     """Model of title."""
     name = models.CharField(
-        max_length=256,
+        max_length=settings.MAX_CHAR_NAME,
         verbose_name='Название произведения')
-    year = models.IntegerField(verbose_name='Год создания произведения')
+    year = models.SmallIntegerField(
+        verbose_name='Год создания произведения',
+        validators=(lte_current_year_validator,))
     description = models.TextField(
         default='',
         blank=True,
@@ -126,8 +141,15 @@ class Review(models.Model):
         verbose_name='Автор отзыва'
     )
     score = models.IntegerField(
-        default=5,
-        validators=[MaxValueValidator(10), MinValueValidator(1)],
+        # default=5,
+        validators=[MaxValueValidator(
+            limit_value=10,
+            message='Оценка должна быть не более 10'
+        ), MinValueValidator(
+            limit_value=1,
+            message='Оценка должна быть не менее 1'
+        )
+        ],
         verbose_name='Оценка произведения'
     )
 
@@ -152,19 +174,18 @@ class Comment(models.Model):
     """Comment model."""
     review = models.ForeignKey(
         Review,
-        # При удалении объекта отзыва Review должны быть удалены
-        # все комментарии к этому отзыву.
         on_delete=models.CASCADE,
         related_name='comments',
         verbose_name='Идентификатор отзыва'
     )
     text = models.TextField()
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='comments',
+        User, on_delete=models.CASCADE,
+        related_name='comments',
         verbose_name='Автор комментария'
     )
     pub_date = models.DateTimeField(
-        'Дата публикации комментария',
+        verbose_name='Дата публикации комментария',
         auto_now_add=True,
     )
 

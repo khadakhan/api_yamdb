@@ -1,55 +1,41 @@
-from datetime import datetime
-
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Avg, IntegerField
-from django.db.models.functions import Cast
+from django.contrib.auth.models import UnicodeUsernameValidator
+from django.contrib.auth.tokens import default_token_generator
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer, ValidationError
-from rest_framework.validators import UniqueTogetherValidator
 
-from reviews.models import Category, Comment, Genre, Review, Title, SCORES
+from reviews.validators import validate_username_me
+from reviews.models import Category, Comment, Genre, Review, Title
 
 User = get_user_model()
 
 
-class ConnectorToSlug(serializers.RelatedField):
-    """Provide methods to change incoming data while serialize."""
-
-    def __init__(self, *args, base_serializer, **kwargs):
-        self.base_serializer = base_serializer
-        super().__init__(*args, **kwargs)
-
-    def get_model(self):
-        return self.base_serializer.Meta.model
-
-    def to_internal_value(self, slug):
-        try:
-            object_with_slug = self.get_model().objects.get(slug=slug)
-        except ObjectDoesNotExist:
-            raise serializers.ValidationError(f'Incorrect slug {slug}')
-        return object_with_slug
-
-    def get_queryset(self):
-        return self.get_model.object.all()
-
-    def to_representation(self, instance):
-        return self.base_serializer(instance).data
-
-
 class UserSerializer(ModelSerializer):
     """User serializer."""
+
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
 
-    def validate_username(self, value):
-        if value.lower() == 'me':
-            raise serializers.ValidationError(
-                "Имя пользователя 'me' недоступно")
-        return value
+    def create(self, data):
+        email_user = User.objects.filter(
+            email=data.get('email')).first()
+        username_user = User.objects.filter(
+            username=data.get('username')).first()
+        if email_user != username_user:
+            error_msg = {}
+            if not email_user:
+                error_msg['username'] = ('Пользователь с таким '
+                                         'username уже существует.')
+            if not username_user:
+                error_msg['email'] = ('Пользователь с таким '
+                                      'email уже существует.')
+            raise ValidationError(error_msg)
+        user, _ = User.objects.get_or_create(**data)
+        return user
 
     def update(self, instance, validated_data):
         validated_data.pop('role', None)
@@ -58,16 +44,18 @@ class UserSerializer(ModelSerializer):
 
 class TokenSerializer(serializers.Serializer):
     """Token serializer."""
-    username = serializers.CharField()
+    username = serializers.CharField(
+        max_length=settings.MAX_NAME_LENGTH, validators=(
+            validate_username_me, UnicodeUsernameValidator))
     confirmation_code = serializers.CharField()
 
     def validate(self, data):
-        user = User.objects.filter(
-            username=data.get('username'),
-            confirmation_code=data.get('confirmation_code')).first()
-        if user is None:
-            raise ValidationError('Неправильный код или имя пользователя.')
-        data['user'] = user
+        user = get_object_or_404(
+            User, username=data.get('username'))
+        if not default_token_generator.check_token(
+                user, data.get('confirmation_code')):
+            raise ValidationError(
+                'Неправильный код или имя пользователя.')
         return data
 
 
@@ -78,35 +66,25 @@ class ReviewSerializer(ModelSerializer):
         slug_field='username',
         read_only=True
     )
-    score = serializers.ChoiceField(choices=SCORES)
-    title = serializers.HiddenField(
-        default=serializers.PrimaryKeyRelatedField(
-            queryset=Title.objects.all(),
-        )
-    )
 
-    def validate_title(self, value):
-        # Кто бы мог подумать???
-        title = self.context['view'].kwargs['title_id']
-        return get_object_or_404(Title, pk=title)
+    def validate(self, data):
+        title_id = self.context['view'].kwargs['title_id']
+        title = get_object_or_404(Title, pk=title_id)
+        curr_author = self.context['request'].user
+        if (not self.context['request'].method == 'PATCH') and (
+                title.reviews.filter(author=curr_author).exists()):
+            raise ValidationError(
+                'Пользователь может оставить только один отзыв'
+                ' к произведению!')
+        return data
 
     class Meta:
         fields = ('text',
                   'id',
-                  'title',
                   'author',
                   'score',
                   'pub_date')
         model = Review
-        # На одно произведение пользователь может оставить только один отзыв.
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Review.objects.all(),
-                fields=('title', 'author'),
-                message=("Пользователь может оставить только один отзыв"
-                         " к произведению!")
-            )
-        ]
 
 
 class CommentSerializer(ModelSerializer):
@@ -141,12 +119,12 @@ class GenreSerializer(ModelSerializer):
         model = Genre
 
 
-class TitleSerializer(serializers.ModelSerializer):
-    """Serializer for title viewset."""
+class TitleReadSerializer(ModelSerializer):
+    """Serializer for read title viewset."""
 
-    genre = ConnectorToSlug(base_serializer=GenreSerializer, many=True)
-    rating = serializers.SerializerMethodField()
-    category = ConnectorToSlug(base_serializer=CategorySerializer)
+    genre = GenreSerializer(many=True)
+    rating = serializers.IntegerField(read_only=True, allow_null=True)
+    category = CategorySerializer()
 
     class Meta:
         fields = (
@@ -159,42 +137,26 @@ class TitleSerializer(serializers.ModelSerializer):
             'category')
         model = Title
 
-    def get_rating(self, title):
-        return title.reviews.all().aggregate(
-            rating=Cast(Avg('score'), output_field=IntegerField()))['rating']
 
-    def validate_genre(self, genre):
-        if not genre:
-            raise ValidationError('Title must have genre.')
-        return genre
+class TitleWriteSerializer(ModelSerializer):
+    """Serializer for write to title viewset."""
 
-    def validate_year(self, creation_year):
-        if creation_year > datetime.now().year:
-            raise ValidationError(
-                'You cannot add a title that has not yet been published.')
-        return creation_year
+    genre = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Genre.objects.all(),
+        many=True,
+        allow_empty=False)
+    category = serializers.SlugRelatedField(
+        slug_field='slug', queryset=Category.objects.all())
 
-    def create(self, validated_data):
-        category = validated_data.pop('category')
-        genres = validated_data.pop('genre')
+    class Meta:
+        fields = (
+            'name',
+            'year',
+            'description',
+            'genre',
+            'category')
+        model = Title
 
-        title = Title.objects.create(**validated_data)
-
-        title.category = category
-        for genre in genres:
-            title.genre.add(genre)
-        title.save()
-        return title
-
-    def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.year = validated_data.get('year', instance.year)
-        instance.description = validated_data.get(
-            'description', instance.description)
-        instance.category = validated_data.get('category', instance.category)
-        if 'genre' in validated_data:
-            instance.genre.clear()
-            for genre in validated_data['genre']:
-                instance.genre.add(genre)
-        instance.save()
-        return instance
+    def to_representation(self, title):
+        return TitleReadSerializer(title).data
