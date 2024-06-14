@@ -8,15 +8,7 @@ from django.db import models
 SCORES = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 
 
-def validate_username(value):
-    if value.lower() == 'me':
-        raise ValidationError('Никнейм "me" недопустим.')
-    validator = UnicodeUsernameValidator()
-    try:
-        validator(value)
-    except ValidationError as error:
-        raise ValidationError(
-            f"Никнейм содержит недопустимые символы: {error}")
+
 
 
 class UserRole(models.TextChoices):
@@ -26,6 +18,15 @@ class UserRole(models.TextChoices):
 
 
 class User(AbstractUser):
+    def validate_username(value):
+        if value.lower() == 'me':
+            raise ValidationError('Никнейм "me" недопустим.')
+        validator = UnicodeUsernameValidator()
+        try:
+            validator(value)
+        except ValidationError as error:
+            raise ValidationError(
+                f"Никнейм содержит недопустимые символы: {error}")
     email = models.EmailField(unique=True)
     confirmation_code = models.CharField(
         max_length=6,
@@ -65,6 +66,8 @@ class User(AbstractUser):
     @property
     def is_admin(self):
         return self.role == UserRole.ADMIN or self.is_superuser
+
+
 
     def __str__(self):
         return self.email
