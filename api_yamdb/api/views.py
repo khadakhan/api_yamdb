@@ -146,10 +146,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class BaseCreateListDestroyViewSet(
-        mixins.CreateModelMixin,
-        mixins.ListModelMixin,
-        mixins.DestroyModelMixin,
-        viewsets.GenericViewSet):
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet):
     """Base class to provide create, list, destroy acts."""
 
     permission_classes = (IsAdmin | ReadOnly,)
@@ -180,6 +180,7 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     queryset = Title.objects.prefetch_related('genre').select_related(
         'category').annotate(rating=Avg('reviews__score'))
+    permission_classes = (IsAdmin | ReadOnly,)
     http_method_names = ('get', 'post', 'patch', 'delete')
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter

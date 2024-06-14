@@ -12,6 +12,7 @@ User = get_user_model()
 
 class UserSerializer(ModelSerializer):
     """User serializer."""
+
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name',
@@ -51,13 +52,12 @@ class ReviewSerializer(ModelSerializer):
         title_id = self.context['view'].kwargs['title_id']
         title = get_object_or_404(Title, pk=title_id)
         curr_author = self.context['request'].user
-        for review in title.reviews.all():
-            if review.author == curr_author:
-                raise serializers.ValidationError(
-                    "Пользователь может оставить только один отзыв"
-                    " к произведению!"
-                )
-
+        if (not self.context['request'].method == 'PATCH') and (
+                title.reviews.filter(author=curr_author).exists()):
+            raise serializers.ValidationError(
+                "Пользователь может оставить только один отзыв"
+                " к произведению!"
+            )
         return data
 
     class Meta:
