@@ -1,25 +1,13 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
-from django.core.exceptions import ValidationError
 from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from .validators import lte_current_year_validator
-from api_yamdb import settings
+from .validators import lte_current_year_validator, validate_username
 
 SCORES = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-
-
-def validate_username(value):
-    if value.lower() == 'me':
-        raise ValidationError('Никнейм "me" недопустим.')
-    validator = UnicodeUsernameValidator()
-    try:
-        validator(value)
-    except ValidationError as error:
-        raise ValidationError(
-            f"Никнейм содержит недопустимые символы: {error}")
 
 
 class UserRole(models.TextChoices):
@@ -112,7 +100,7 @@ class Genre(models.Model):
 class Title(models.Model):
     """Model of title."""
     name = models.CharField(
-        max_length=settings.MAX_TITLE_LENGTH,
+        max_length=settings.MAX_CHAR_NAME,
         verbose_name='Название произведения')
     year = models.SmallIntegerField(
         verbose_name='Год создания произведения', validators=(

@@ -1,9 +1,4 @@
-from datetime import datetime
-
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Avg, IntegerField
-from django.db.models.functions import Cast
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer, ValidationError
