@@ -132,3 +132,6 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 5,
 }
+
+MAX_CHAR_NAME = 256
+MAX_CHAR_SLUG = 50

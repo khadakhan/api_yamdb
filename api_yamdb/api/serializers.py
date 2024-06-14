@@ -141,11 +141,18 @@ class GenreSerializer(ModelSerializer):
         model = Genre
 
 
+class TitleReadSerializer(serializers.ModelSerializer):
+    """Serializer for read title viewset."""
+
+    genre = GenreSerializer()
+    category = CategorySerializer()
+
+
 class TitleSerializer(serializers.ModelSerializer):
     """Serializer for title viewset."""
 
     genre = ConnectorToSlug(base_serializer=GenreSerializer, many=True)
-    rating = serializers.SerializerMethodField()
+    rating = serializers.IntegerField(read_only=True)
     category = ConnectorToSlug(base_serializer=CategorySerializer)
 
     class Meta:
@@ -159,20 +166,10 @@ class TitleSerializer(serializers.ModelSerializer):
             'category')
         model = Title
 
-    def get_rating(self, title):
-        return title.reviews.all().aggregate(
-            rating=Cast(Avg('score'), output_field=IntegerField()))['rating']
-
     def validate_genre(self, genre):
         if not genre:
             raise ValidationError('Title must have genre.')
         return genre
-
-    def validate_year(self, creation_year):
-        if creation_year > datetime.now().year:
-            raise ValidationError(
-                'You cannot add a title that has not yet been published.')
-        return creation_year
 
     def create(self, validated_data):
         category = validated_data.pop('category')
