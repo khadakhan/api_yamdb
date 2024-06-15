@@ -26,7 +26,8 @@ from .serializers import (
     TitleWriteSerializer,
     TokenSerializer,
     ReviewSerializer,
-    UserSerializer)
+    UserSerializer,
+    CodeSerializer)
 from .viewsets import BaseCreateListDestroyViewSet
 
 User = get_user_model()
@@ -67,13 +68,11 @@ class AuthViewSet(ViewSet):
 
     @action(detail=False, methods=['post'])
     def signup(self, request):
-        username = request.data.get('username')
-        user = User.objects.filter(
-            email=request.data.get('email')).first()
-        if not user or user.username != username:
-            serializer = UserSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            user = serializer.save()
+        serializer = CodeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user, _ = User.objects.get_or_create(
+            email=request.data['email'],
+            username=request.data['username'])
         generate_and_send_code(user)
         return Response(
             data={'username': user.username, 'email': user.email},
