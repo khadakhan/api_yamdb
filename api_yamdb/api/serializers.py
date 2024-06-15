@@ -20,7 +20,20 @@ class UserSerializer(ModelSerializer):
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
 
-    def create(self, data):
+    def update(self, instance, validated_data):
+        validated_data.pop('role', None)
+        return super().update(instance, validated_data)
+
+
+class CodeSerializer(serializers.Serializer):
+    """Code serializer."""
+    username = serializers.CharField(
+        max_length=settings.MAX_NAME_LENGTH,
+        validators=(validate_username_me, UnicodeUsernameValidator()))
+    email = serializers.EmailField(
+        max_length=settings.MAX_EMAIL_LENGTH)
+
+    def validate(self, data):
         email_user = User.objects.filter(
             email=data.get('email')).first()
         username_user = User.objects.filter(
@@ -34,12 +47,7 @@ class UserSerializer(ModelSerializer):
                 error_msg['email'] = ('Пользователь с таким '
                                       'email уже существует.')
             raise ValidationError(error_msg)
-        user, _ = User.objects.get_or_create(**data)
-        return user
-
-    def update(self, instance, validated_data):
-        validated_data.pop('role', None)
-        return super().update(instance, validated_data)
+        return data
 
 
 class TokenSerializer(serializers.Serializer):
@@ -104,7 +112,7 @@ class CommentSerializer(ModelSerializer):
 
 
 class CategorySerializer(ModelSerializer):
-    """Serializer for category viewset."""
+    """Serializer for category ViewSet."""
 
     class Meta:
         fields = ('name', 'slug')
@@ -112,7 +120,7 @@ class CategorySerializer(ModelSerializer):
 
 
 class GenreSerializer(ModelSerializer):
-    """Serializer for genre viewset."""
+    """Serializer for genre ViewSet."""
 
     class Meta:
         fields = ('name', 'slug')
@@ -120,7 +128,7 @@ class GenreSerializer(ModelSerializer):
 
 
 class TitleReadSerializer(ModelSerializer):
-    """Serializer for read title viewset."""
+    """Serializer for read title ViewSet."""
 
     genre = GenreSerializer(many=True)
     rating = serializers.IntegerField(read_only=True, allow_null=True)
@@ -139,7 +147,7 @@ class TitleReadSerializer(ModelSerializer):
 
 
 class TitleWriteSerializer(ModelSerializer):
-    """Serializer for write to title viewset."""
+    """Serializer for write to title ViewSet."""
 
     genre = serializers.SlugRelatedField(
         slug_field='slug',

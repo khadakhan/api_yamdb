@@ -14,7 +14,9 @@ class UserRole(models.TextChoices):
 
 
 class User(AbstractUser):
-    email = models.EmailField(unique=True)
+    email = models.EmailField(
+        max_length=settings.MAX_EMAIL_LENGTH,
+        unique=True)
     first_name = models.CharField(
         max_length=settings.MAX_NAME_LENGTH,
         blank=True)
@@ -33,7 +35,7 @@ class User(AbstractUser):
             validate_username_me,
             UnicodeUsernameValidator()),
         error_messages={
-            'unique': "Пользователь с таким ником уже существует.",
+            'username': 'Пользователь с таким ником уже существует.',
         },
     )
 
@@ -137,7 +139,7 @@ class Review(models.Model):
         on_delete=models.CASCADE,
         related_name='reviews',
         verbose_name='Автор отзыва'
-    )
+)
     score = models.IntegerField(
         validators=[MaxValueValidator(
             limit_value=10,
