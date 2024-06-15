@@ -33,10 +33,10 @@ User = get_user_model()
 
 
 def generate_and_send_code(user):
-    token = default_token_generator.make_token(user)
+    code = default_token_generator.make_token(user)
     send_mail(
         subject='Код подтверждения',
-        message=f'Ваш код подтверждения - {token}',
+        message=f'Ваш код подтверждения - {code}',
         from_email=settings.FROM_EMAIL,
         recipient_list=[user.email],
         fail_silently=False)

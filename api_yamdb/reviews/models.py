@@ -23,7 +23,7 @@ class User(AbstractUser):
         blank=True)
     bio = models.TextField(blank=True)
     role = models.CharField(
-        max_length=20,
+        max_length=settings.MAX_ROLE_NAME,
         choices=UserRole.choices,
         default=UserRole.USER)
     username = models.CharField(
@@ -127,8 +127,6 @@ class Review(models.Model):
     """Review model."""
     title = models.ForeignKey(
         Title,
-        # При удалении объекта произведения Title должны удаляться все
-        # отзывы к этому произведению и комментарии к ним.
         on_delete=models.CASCADE,
         related_name='reviews',
         verbose_name='Идентификатор произведения'
@@ -141,7 +139,6 @@ class Review(models.Model):
         verbose_name='Автор отзыва'
     )
     score = models.IntegerField(
-        # default=5,
         validators=[MaxValueValidator(
             limit_value=10,
             message='Оценка должна быть не более 10'

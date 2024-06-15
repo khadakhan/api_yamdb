@@ -83,7 +83,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
 
 AUTH_USER_MODEL = 'reviews.User'
 
@@ -125,5 +125,6 @@ REST_FRAMEWORK = {
 
 MAX_CHAR_SLUG = 50
 MAX_NAME_LENGTH = 150
+MAX_ROLE_NAME = 20
 MAX_CHAR_NAME = 256
 FROM_EMAIL = 'from@example.com'
