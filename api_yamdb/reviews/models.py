@@ -139,7 +139,7 @@ class Review(models.Model):
         on_delete=models.CASCADE,
         related_name='reviews',
         verbose_name='Автор отзыва'
-)
+    )
     score = models.IntegerField(
         validators=[MaxValueValidator(
             limit_value=settings.MAX_SCORE,
