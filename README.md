@@ -56,7 +56,15 @@ http://localhost:8000/
 ```
 ## Как наполнить БД данными:
 
-#### *В разработке...*
+```
+python manage.py load_from_csv (-f|--files) <Путь до файл(а|лов) .csv> (-m|--model) <Модель в которую нужно загружать содержимое файл(а|ов)>
+```
+Поддерживаются модели category, comments, genre, review, titles, users, genre_title.
+
+Пример команды:
+```
+python manage.py load_from_csv -f static/data/genre.csv -m genre
+```
 
 ## Примеры
 >  Некоторые примеры запросов к API
