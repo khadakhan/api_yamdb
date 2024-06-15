@@ -90,7 +90,7 @@ class AuthViewSet(ViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
-    """Viewset for comments."""
+    """ViewSet for comments."""
     serializer_class = CommentSerializer
     permission_classes = (AuthorModeratorAdminOrReadOnly,)
     http_method_names = ('get', 'post', 'patch', 'delete')
@@ -107,7 +107,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
-    """Viewset for reviews."""
+    """ViewSet for reviews."""
     serializer_class = ReviewSerializer
     permission_classes = (AuthorModeratorAdminOrReadOnly,)
     http_method_names = ('get', 'post', 'patch', 'delete')
