@@ -69,7 +69,6 @@ class ReviewSerializer(ModelSerializer):
 
     def validate(self, data):
         title_id = self.context['view'].kwargs['title_id']
-        # title = get_object_or_404(Title, pk=title_id)
         curr_author = self.context['request'].user
         if (not self.context['request'].method == 'PATCH') and (
             Review.objects.select_related('title').filter(
@@ -77,7 +76,6 @@ class ReviewSerializer(ModelSerializer):
                 title__id=title_id
             ).exists()
         ):
-            # title.reviews.filter(author=curr_author).exists()):
             raise ValidationError(
                 'Пользователь может оставить только один отзыв'
                 ' к произведению!')
