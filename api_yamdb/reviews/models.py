@@ -142,11 +142,11 @@ class Review(models.Model):
 )
     score = models.IntegerField(
         validators=[MaxValueValidator(
-            limit_value=10,
-            message='Оценка должна быть не более 10'
+            limit_value=settings.MAX_SCORE,
+            message=f'Оценка должна быть не более {settings.MAX_SCORE}'
         ), MinValueValidator(
-            limit_value=1,
-            message='Оценка должна быть не менее 1'
+            limit_value=settings.MIN_SCORE,
+            message=f'Оценка должна быть не менее {settings.MIN_SCORE}'
         )
         ],
         verbose_name='Оценка произведения'
