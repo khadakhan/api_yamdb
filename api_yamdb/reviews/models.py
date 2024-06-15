@@ -125,9 +125,6 @@ class Title(models.Model):
 
 class Review(models.Model):
     """Review model."""
-    MAX_SCORE = 10
-    MIN_SCORE = 1
-    
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
@@ -143,11 +140,11 @@ class Review(models.Model):
     )
     score = models.IntegerField(
         validators=[MaxValueValidator(
-            limit_value=MAX_SCORE,
-            message=f'Оценка должна быть не более {MAX_SCORE}'
+            limit_value=settings.MAX_SCORE,
+            message=f'Оценка должна быть не более {settings.MAX_SCORE}'
         ), MinValueValidator(
-            limit_value=MIN_SCORE,
-            message=f'Оценка должна быть не менее {MIN_SCORE}'
+            limit_value=settings.MIN_SCORE,
+            message=f'Оценка должна быть не менее {settings.MIN_SCORE}'
         )
         ],
         verbose_name='Оценка произведения'
