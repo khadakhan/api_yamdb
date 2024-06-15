@@ -59,7 +59,7 @@ http://localhost:8000/
 ```
 python manage.py load_from_csv (-f|--files) <Путь до файл(а|лов) .csv> (-m|--model) <Модель в которую нужно загружать содержимое файл(а|ов)>
 ```
-Поддерживаются модели (category, comments, genre, review, titles, users, genre_title).
+Поддерживаются модели category, comments, genre, review, titles, users, genre_title.
 
 Пример команды:
 ```
